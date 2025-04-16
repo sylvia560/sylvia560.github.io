@@ -35,7 +35,7 @@
         </select>
       </div>
       <button type="submit" class="btn">Sign Up</button>
-      <p class="redirect">Already have an account? <a href="index.html">Login</a></p>
+      <p class="redirect">Already have an account? <a href="try_login.html">Login</a></p>
     </form>
   </div>
   <script>
@@ -70,7 +70,7 @@
       };
 
       try {
-        const response = await fetch('http://127.0.0.1:8000/auth', {
+        const response = await fetch('zta-production.up.railway.app/auth', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(user)
@@ -84,7 +84,7 @@
         const data = await response.json();
         alert('Signup successful!');
         console.log('User created:', data);
-        window.location.href = 'index.html';
+        window.location.href = 'try_login.html';
       } catch (error) {
         console.error('Signup failed:', error);
         alert(error.message || 'Signup failed. Please try again.');
