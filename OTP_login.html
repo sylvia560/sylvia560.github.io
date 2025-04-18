@@ -25,6 +25,7 @@
     <p id="message"></p>
 
     <script>
+        const SERVER1_URL = "https://sylvia560githubio-production.up.railway.app"
         async function sendOTP() {
             const email = localStorage.getItem('email');
             if (!email) {
@@ -32,7 +33,7 @@
                 return;
             }
 
-            const response = await fetch("http://localhost:3000/send-otp", {
+            const response = await fetch(`${SERVER1_URL}/send-otp`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ email })
@@ -47,7 +48,7 @@
             const email = localStorage.getItem('email');
             const otp = document.getElementById("otp").value;
 
-            const response = await fetch("http://localhost:3000/verify-otp", {
+            const response = await fetch(`${SERVER1_URL}/verify-otp`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ email, otp })

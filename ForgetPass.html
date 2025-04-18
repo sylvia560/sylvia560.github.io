@@ -26,6 +26,9 @@
     <p id="message"></p>
 
     <script>
+        const SERVER1_URL = "https://brilliant-vision-production.up.railway.app"; // Update with your server URL
+
+        // Function to send OTP
        async function sendOTP() {
         const email = document.getElementById("email").value;
         const messageElement = document.getElementById("message"); // Fix reference
@@ -50,7 +53,7 @@
                 messageElement.innerText = checkResult.message; // "Email found! You can proceed with password reset."
                 
                 // Proceed to send OTP if email is valid
-                const otpResponse = await fetch("http://localhost:4000/send-otp", {
+                const otpResponse = await fetch(`${SERVER1_URL}/send-otp`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ email })
@@ -75,7 +78,7 @@
             const email = document.getElementById("email").value;
             const otp = document.getElementById("otp").value;
 
-            const response = await fetch("http://localhost:4000/verify-otp", {
+            const response = await fetch(`${SERVER1_URL}/verify-otp`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ email, otp })
