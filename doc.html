@@ -133,7 +133,7 @@
                 const browser = getBrowser();
 
                 // Send the refresh request with JSON data
-                const response = await fetch('http://127.0.0.1:8000/auth/refresh', {
+                const response = await fetch('https://sylvia560githubio-production-0677.up.railway.app/auth/refresh', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -263,13 +263,13 @@
 
             try {
                 // Fetch doctor details
-                const doctorRes = await fetchWithTokenRefresh(`http://127.0.0.1:8000/doctors`);
+                const doctorRes = await fetchWithTokenRefresh(`https://sylvia560githubio-production-0677.up.railway.app/doctors`);
                 if (!doctorRes.ok) throw new Error('Failed to fetch doctor details');
                 const doctorData = await doctorRes.json();
                 console.log("Doctor details:", doctorData); // Debugging
 
                 // Fetch authenticated user details
-                const authRes = await fetchWithTokenRefresh(`http://127.0.0.1:8000/doctors`);
+                const authRes = await fetchWithTokenRefresh(`https://sylvia560githubio-production-0677.up.railway.app/doctors`);
                 if (!authRes.ok) throw new Error('Failed to fetch user details');
                 const authData = await authRes.json();
                 console.log("User details:", authData); // Debugging
@@ -281,7 +281,7 @@
                 document.getElementById('MS').textContent += ` ${doctorData.Department_Name_x || doctorData.department_name || 'N/A'}`;
 
                 // Fetch patients under the doctor's care
-                const patientsRes = await fetchWithTokenRefresh(`http://127.0.0.1:8000/doctors/responsible/patients`);
+                const patientsRes = await fetchWithTokenRefresh(`https://sylvia560githubio-production-0677.up.railway.app/doctors/responsible/patients`);
                 if (!patientsRes.ok) throw new Error('Failed to fetch patients');
                 const patientsData = await patientsRes.json();
                 console.log("Patients data:", patientsData); // Debugging
@@ -330,7 +330,7 @@
         async function deletePatient(patientId) {
             if (confirm('Are you sure you want to delete this patient?')) {
                 try {
-                    const res = await fetchWithTokenRefresh(`http://127.0.0.1:8000/patients/${patientId}`, {
+                    const res = await fetchWithTokenRefresh(`https://sylvia560githubio-production-0677.up.railway.app/patients/${patientId}`, {
                         method: 'DELETE',
                     });
 
