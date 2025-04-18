@@ -1,7 +1,7 @@
-from database import Base
+from dbtestmysql import Base,engine
 from sqlalchemy import Double,Column,Integer,String ,ForeignKey,Boolean,BigInteger
 from sqlalchemy.orm import relationship
-
+from sqlalchemy.orm import Session
 
 
 class Activity(Base):
@@ -114,4 +114,10 @@ class Billing(Base):
     
     
 
-    
+'''def delete_all_rows_from_all_tables():
+    with Session(engine) as session:
+        for table in reversed(Base.metadata.sorted_tables):
+            session.execute(table.delete())
+        session.commit()
+
+delete_all_rows_from_all_tables()'''

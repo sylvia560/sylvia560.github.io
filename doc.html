@@ -169,7 +169,7 @@
             } catch (error) {
                 console.error('Token refresh failed:', error);
                 localStorage.clear(); // Clear tokens on failure
-                window.location.href = 'login.html'; // Redirect to login page
+                window.location.href = 'index.html'; // Redirect to login page
                 return null;
             }
         }
@@ -215,7 +215,7 @@
             const token = localStorage.getItem('access_token');
             if (!token) {
                 console.error('No access token found');
-                window.location.href = 'login.html';
+                window.location.href = 'index.html';
                 return;
             }
 
@@ -257,7 +257,7 @@
             // Redirect if not authenticated or not a doctor
             if (!token || !userId || role !== 'Doctor') {
                 console.error('Unauthorized access. Redirecting to login page.'); // Debugging
-                window.location.href = 'login.html';
+                window.location.href = 'index.html';
                 return;
             }
 
@@ -349,7 +349,7 @@
 
         function handleEditPatient(patientId) {
             const email = localStorage.getItem('email'); // Get doctor's email from local storage
-            window.location.href = `OTP_login.html?patient_id=${patientId}&email=${email}`;
+            window.location.href = `OTP_index.html?patient_id=${patientId}&email=${email}`;
         }
     </script>
 </body>

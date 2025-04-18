@@ -197,7 +197,7 @@
             } catch (error) {
                 console.error('Token refresh failed:', error);
                 localStorage.clear(); // Clear tokens on failure
-                window.location.href = 'login.html'; // Redirect to login page
+                window.location.href = 'index.html'; // Redirect to login page
                 return null;
             }
         }
@@ -243,7 +243,7 @@
             const token = localStorage.getItem('access_token');
             if (!token) {
                 console.error('No access token found');
-                window.location.href = 'login.html';
+                window.location.href = 'index.html';
                 return;
             }
 
@@ -285,7 +285,7 @@
             // Redirect if not authenticated or not a patient
             if (!token || !userId || (role !== 'Patient' && role !== 'Client')) {
                 console.error('Unauthorized access. Redirecting to login page.'); // Debugging
-                window.location.href = 'login.html';
+                window.location.href = 'index.html';
                 return;
             }
 
