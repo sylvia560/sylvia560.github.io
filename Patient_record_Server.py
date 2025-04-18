@@ -184,6 +184,9 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_bearer)]):
     except JWTError as e:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=f'Could not validate user: {str(e)}')
 
+@Patient_record_router.get("/hello")
+async def hello_world():
+    return {"message": "Hello, World!"}
 
 @Patient_record_router.get("/doctors")
 async def get_doctor_details(current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
