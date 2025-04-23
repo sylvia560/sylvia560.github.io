@@ -15,10 +15,10 @@ SessionLocal = sessionmaker(bind=engine)
 db = SessionLocal()
 
 # Encrypt National_ID in auth table
-auth_records = db.query(modelsmysql.auth).all()
+'''auth_records = db.query(modelsmysql.auth).all()
 for record in auth_records:
     if not record.National_ID.startswith("gAAAAA"):  # Avoid double encryption
-        record.National_ID = encrypt_data(str(record.National_ID))
+        record.National_ID = encrypt_data(str(record.National_ID))'''
 
 # Encrypt fields in Clinical_services_modified table
 clinical_services_records = db.query(modelsmysql.Clinical_services).all()

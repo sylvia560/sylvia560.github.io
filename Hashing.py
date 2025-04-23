@@ -1,7 +1,21 @@
-from passlib.context import CryptContext
+import bcrypt
+from sqlalchemy.orm import sessionmaker
+from dbtestmysql import engine
+from cryptography.fernet import Fernet
+import modelsmysql
 
-pwd_cxt=CryptContext(schemes=["bcrypt"],deprecated="auto")
+# Create a database session
+SessionLocal = sessionmaker(bind=engine)
+db = SessionLocal()
 
-class Hash():
-    def bcrypt(password:str):
-      return pwd_cxt.hash(password) 
+users = db.query(modelsmysql.auth).all()
+for user in users:
+    # Hash the password
+    user.Password = bcrypt.hashpw(user.Password.encode('utf-8'), bcrypt.gensalt())
+
+
+
+db.commit()
+db.close()
+
+print("Existing data has been hashed successfully.")
