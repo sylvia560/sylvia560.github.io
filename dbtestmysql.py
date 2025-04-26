@@ -10,4 +10,3 @@ engine=create_engine(URL_db)
 SessionLocal=sessionmaker(bind=engine,autoflush=False)
 
 Base=declarative_base()
-

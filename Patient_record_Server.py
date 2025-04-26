@@ -190,28 +190,25 @@ async def hello_world():
 
 @Patient_record_router.get("/doctors")
 async def get_doctor_details(current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
-    user_id = current_user["user_id"]
-    
-    # Get basic auth info
-    auth_data = db.query(auth).filter(auth.User_ID == user_id).first()
-    if not auth_data:
-        raise HTTPException(status_code=404, detail="User not found")
-    
-    # Get doctor info - assuming Doctor_ID in auth matches Doctors.Doctor_ID
-    doctor_data = db.query(Doctors).filter(Doctors.Doctor_ID == user_id).first()
-    
-    # If not found, try alternative approach
-    if not doctor_data and hasattr(auth_data, 'Doctor_ID'):
-        doctor_data = db.query(Doctors).filter(Doctors.Doctor_ID == auth_data.Doctor_ID).first()
-    
-    if not doctor_data:
-        raise HTTPException(status_code=404, detail="Doctor details not found")
+    user_id= current_user["user_id"]
+    Role=current_user["role"]
+    if(Role=="Doctor"):
+        # Query the auth table for the doctor's name and email
+        auth_data = db.query(auth).filter(auth.User_ID == user_id).first()
+        
+        # Query the doctors table for the doctor's department name
+        doctor_data = db.query(Doctors).filter(Doctors.Doctor_ID == user_id).first()
 
-    return {
-        "Full_Name": auth_data.Full_Name,
-        "Email": auth_data.Email,
-        "Department_Name_x": doctor_data.Department_Name_x,
-    }
+        if not auth_data or not doctor_data:
+            raise HTTPException(status_code=404, detail="Doctor not found")
+
+        return {
+            "Full_Name": auth_data.Full_Name,
+            "Email": auth_data.Email,
+            "Department_Name_x": doctor_data.Department_Name_x,
+        }
+    else:
+        raise HTTPException(status_code=403, detail="RBAC unauthorized !")
  
 
 
@@ -230,10 +227,14 @@ async def create_nurse(nurse: NursesBase, db: Session = Depends(get_db)):
 @Patient_record_router.get("/nurses", response_model=NursesBase)
 async def get_nurse(current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
     nurse_id= current_user["user_id"]
-    db_nurse = db.query(modelsmysql.Nurses).filter(modelsmysql.Nurses.Nurse_ID == nurse_id).first()
-    if db_nurse is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Nurse not found")
-    return db_nurse
+    Role=current_user["role"]
+    if(Role=="Nurse"):
+        db_nurse = db.query(modelsmysql.Nurses).filter(modelsmysql.Nurses.Nurse_ID == nurse_id).first()
+        if db_nurse is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Nurse not found")
+        return db_nurse
+    else:
+        raise HTTPException(status_code=403, detail="RBAC unauthorized !")
 
 # POST endpoint to create a new clinical service record
 @Patient_record_router.post("/clinical-services", status_code=status.HTTP_201_CREATED)
@@ -254,18 +255,22 @@ async def create_clinical_service(service: ClinicalServicesBase, db: Session = D
 @Patient_record_router.get("/clinical-services", response_model=ClinicalServicesBase)
 async def get_clinical_service(current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
     patient_id= current_user["user_id"]
-    db_service = db.query(modelsmysql.Clinical_services).filter(modelsmysql.Clinical_services.Patient_ID == patient_id).first()
-    if db_service is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Clinical service record not found")
-    return {
-        "Patient_ID": db_service.Patient_ID,
-        "Department_ID": db_service.Department_ID,
-        "Medication_Name": decrypt_data(db_service.Medication_Name),
-        "Dosage_Instructions": decrypt_data(db_service.Dosage_Instructions),
-        "Responsible_Doctor_ID": db_service.Responsible_Doctor_ID,
-        "Treatment_Details": decrypt_data(db_service.Treatment_Details),
-        "Department_Name": db_service.Department_Name
-    }
+    Role=current_user["role"]
+    if(Role=="Client"):
+        db_service = db.query(modelsmysql.Clinical_services).filter(modelsmysql.Clinical_services.Patient_ID == patient_id).first()
+        if db_service is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Clinical service record not found")
+        return {
+            "Patient_ID": db_service.Patient_ID,
+            "Department_ID": db_service.Department_ID,
+            "Medication_Name": decrypt_data(db_service.Medication_Name),
+            "Dosage_Instructions": decrypt_data(db_service.Dosage_Instructions),
+            "Responsible_Doctor_ID": db_service.Responsible_Doctor_ID,
+            "Treatment_Details": decrypt_data(db_service.Treatment_Details),
+            "Department_Name": db_service.Department_Name}
+    else:
+        raise HTTPException(status_code=403, detail="RBAC unauthorized !")
+
 
 
 
@@ -282,10 +287,14 @@ async def create_billing(billing: BillingBase, db: Session = Depends(get_db)):
 @Patient_record_router.get("/billing", response_model=BillingBase)
 async def get_billing(current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
     patient_id= current_user["user_id"]
-    db_billing = db.query(modelsmysql.Billing).filter(modelsmysql.Billing.Patient_ID == patient_id).first()
-    if db_billing is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Billing record not found")
-    return db_billing
+    Role=current_user["role"]
+    if(Role=="Client"):
+        db_billing = db.query(modelsmysql.Billing).filter(modelsmysql.Billing.Patient_ID == patient_id).first()
+        if db_billing is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Billing record not found")
+        return db_billing
+    else:
+        raise HTTPException(status_code=403, detail="RBAC unauthorized !")
 
 
 
@@ -358,54 +367,70 @@ async def delete_patient(
     current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    try:
-        # Fetch the patient record
-        db_patient = db.query(modelsmysql.Patient).filter(modelsmysql.Patient.User_ID == patient_id).first()
-        if not db_patient:
+    Role=current_user["role"]
+    if(Role=="Doctor"):
+        try:
+            # Fetch the patient record
+            db_patient = db.query(modelsmysql.Patient).filter(modelsmysql.Patient.User_ID == patient_id).first()
+            if not db_patient:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"Patient with ID {patient_id} not found"
+                )
+
+            # Delete related Clinical_services records
+            db.query(modelsmysql.Clinical_services).filter(modelsmysql.Clinical_services.Patient_ID == patient_id).delete()
+
+            # Delete related Billing record
+            db.query(modelsmysql.Billing).filter(modelsmysql.Billing.Patient_ID == patient_id).delete()
+
+            # Delete the patient record
+            db.delete(db_patient)
+
+            # Commit all changes
+            db.commit()
+
+            return  # Return 204 No Content on successful deletion
+
+        except Exception as e:
+            db.rollback()
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Patient with ID {patient_id} not found"
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"An error occurred while deleting the patient record: {str(e)}"
             )
 
-        # Delete related Clinical_services records
-        db.query(modelsmysql.Clinical_services).filter(modelsmysql.Clinical_services.Patient_ID == patient_id).delete()
-
-        # Delete related Billing record
-        db.query(modelsmysql.Billing).filter(modelsmysql.Billing.Patient_ID == patient_id).delete()
-
-        # Delete the patient record
-        db.delete(db_patient)
-
-        # Commit all changes
-        db.commit()
-
-        return  # Return 204 No Content on successful deletion
-
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"An error occurred while deleting the patient record: {str(e)}"
-        )
-
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"An error occurred while deleting the patient record: {str(e)}"
-        )     
+        except Exception as e:
+            db.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"An error occurred while deleting the patient record: {str(e)}"
+            )     
+    else:
+        raise HTTPException(status_code=403, detail="RBAC unauthorized !") 
         
         
         
         
 # GET endpoint to retrieve a patient record by Usert_ID
 @Patient_record_router.get("/patients", response_model=PatientBase)
-async def get_patient(patient_id: str, db: Session = Depends(get_db)):
-    db_patient = db.query(modelsmysql.Patient).filter(modelsmysql.Patient.User_ID == patient_id).first()
-    db_clinical_services = db.query(modelsmysql.Clinical_services).filter(modelsmysql.Clinical_services.Patient_ID == patient_id).all()
+async def get_patient(
+    current_user: dict = Depends(get_current_user), 
+    db: Session = Depends(get_db)
+):
+    user_id = current_user["user_id"]
+    role = current_user["role"]
+    
+    if role != "Client":
+        raise HTTPException(status_code=403, detail="RBAC unauthorized!")
+
+    db_patient = db.query(modelsmysql.Patient).filter(modelsmysql.Patient.User_ID == user_id).first()
+    db_clinical_services = db.query(modelsmysql.Clinical_services).filter(
+        modelsmysql.Clinical_services.Patient_ID == user_id
+    ).all()
+    
     if db_patient is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Patient record not found")
-    # Manually return a clean dict or Pydantic model
+
     return {
         "User_ID": db_patient.User_ID,
         "Patient_ID_Clinical": db_patient.Patient_ID_Clinical,
@@ -429,6 +454,7 @@ async def get_patient(patient_id: str, db: Session = Depends(get_db)):
             for cs in db_clinical_services
         ]
     }
+
 
 
 
@@ -500,21 +526,25 @@ async def update_dosage_instructions(
 @Patient_record_router.get("/patientsfetchrelated", response_model=PatientWithClinicalServices)
 async def get_patient(current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
     user_id= current_user["user_id"]
-    # Fetch the patient record
-    db_patient = db.query(modelsmysql.Patient).filter(modelsmysql.Patient.User_ID == user_id).first()
-    if db_patient is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Patient record not found")
-    
-    # Fetch the related clinical services records
-    db_clinical_services = db.query(modelsmysql.Clinical_services).filter(modelsmysql.Clinical_services.Patient_ID == user_id).all()
-    
-    # Combine the data into the response schema
-    response_data = {
-        "patient": db_patient,
-        "clinical_services": db_clinical_services
-    }
-    
-    return response_data
+    Role=current_user["role"]
+    if(Role=="Client"):
+        # Fetch the patient record
+        db_patient = db.query(modelsmysql.Patient).filter(modelsmysql.Patient.User_ID == user_id).first()
+        if db_patient is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Patient record not found")
+        
+        # Fetch the related clinical services records
+        db_clinical_services = db.query(modelsmysql.Clinical_services).filter(modelsmysql.Clinical_services.Patient_ID == user_id).all()
+        
+        # Combine the data into the response schema
+        response_data = {
+            "patient": db_patient,
+            "clinical_services": db_clinical_services
+        }
+        
+        return response_data
+    else:
+        raise HTTPException(status_code=403, detail="RBAC unauthorized !")
 
 
 async def update_clinical_service(
@@ -607,7 +637,11 @@ def get_patient_with_billing(db: Session, user_id: int):
 @Patient_record_router.get("/patientswbilling", response_model=PatientWithBilling)
 def read_patient_with_billing(current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
     user_id = current_user["user_id"]
-    return get_patient_with_billing(db, user_id)
+    Role = current_user["role"]
+    if (Role == "Client"):
+        return get_patient_with_billing(db, user_id)
+    else:
+        raise HTTPException(status_code=403, detail="RBAC unauthorized!")
 
 
 # Get function to retrieve all patients and their clinical services for a specific doctor
@@ -668,7 +702,12 @@ def get_patients_by_doctor(db: Session, user_id: int):
 @Patient_record_router.get("/doctors/responsible/patients", response_model=list[PatientForDoctor])
 def read_patients_by_doctor(current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
     doctor_id= current_user["user_id"]
-    return get_patients_by_doctor(db, doctor_id)
+    Role=current_user["role"]
+    if(Role=="Doctor"):
+        return get_patients_by_doctor(db, doctor_id)
+    else:
+        raise HTTPException(status_code=403, detail="RBAC unauthorized !")
+        
 
 
 # Get function to retrieve all clinical services cases for the department a nurse is responsible for
@@ -714,5 +753,8 @@ def get_clinical_services_by_nurse(db: Session, nurse_id: int):
 @Patient_record_router.get("/nurses/clinical-services", response_model=NurseWithClinicalServices)
 def read_clinical_services_by_nurse(current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
     nurse_id= current_user["user_id"]
-    return get_clinical_services_by_nurse(db, nurse_id)
-
+    Role=current_user["role"]
+    if(Role=="Nurse"):
+        return get_clinical_services_by_nurse(db, nurse_id)
+    else:
+        raise HTTPException(status_code=403, detail="RBAC unauthorized !")
