@@ -38,15 +38,6 @@
 </div>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-    const doctorId = localStorage.getItem('userID'); // get the doctor ID saved
-    if (doctorId) {
-        document.getElementById('prescribingDoctorID').value = doctorId;
-    } else {
-        alert('Doctor ID not found. Please login again.');
-        window.location.href = 'doc.html'; // Redirect back if not found
-    }
-});
     async function submitPatient() {
         // Collect form data
         const formData = {
