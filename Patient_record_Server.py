@@ -412,32 +412,14 @@ async def delete_patient(
         
         
 # GET endpoint to retrieve a patient record by Usert_ID
-# GET endpoint to retrieve a patient record by patient_id (User_ID)
+# GET endpoint to retrieve a patient record by Usert_ID
 @Patient_record_router.get("/patients", response_model=PatientBase)
-async def get_patient(
-    current_user: dict = Depends(get_current_user), 
-    db: Session = Depends(get_db),
-    patient_id: str = Query(..., alias="patient_id")  # Corrected query parameter
-):
-    role = current_user.get("role")
-    current_user_id = current_user.get("user_id")  # Assuming user
-    # Check if the role is "Client"
-    if role != "Client":
-        raise HTTPException(status_code=403, detail="RBAC unauthorized!")
-    
-    # Query the patient record based on user_id from the query parameter
+async def get_patient(patient_id: str, db: Session = Depends(get_db)):
     db_patient = db.query(modelsmysql.Patient).filter(modelsmysql.Patient.User_ID == patient_id).first()
-    
-    # Query the clinical services for this patient
-    db_clinical_services = db.query(modelsmysql.Clinical_services).filter(
-        modelsmysql.Clinical_services.Patient_ID == patient_id
-    ).all()
-    
-    # Check if the patient record exists
+    db_clinical_services = db.query(modelsmysql.Clinical_services).filter(modelsmysql.Clinical_services.Patient_ID == patient_id).all()
     if db_patient is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Patient record not found")
-
-    # Return the patient data, decrypting any sensitive fields
+    # Manually return a clean dict or Pydantic model
     return {
         "User_ID": db_patient.User_ID,
         "Patient_ID_Clinical": db_patient.Patient_ID_Clinical,
@@ -461,7 +443,6 @@ async def get_patient(
             for cs in db_clinical_services
         ]
     }
-
 
 
 
