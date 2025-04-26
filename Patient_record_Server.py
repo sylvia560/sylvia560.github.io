@@ -412,25 +412,25 @@ async def delete_patient(
         
         
 # GET endpoint to retrieve a patient record by Usert_ID
+# GET endpoint to retrieve a patient record by patient_id (User_ID)
 @Patient_record_router.get("/patients", response_model=PatientBase)
 async def get_patient(
     current_user: dict = Depends(get_current_user), 
     db: Session = Depends(get_db),
-    user_id: str = Query(..., alias="user_id")  # Ensures the query parameter is used
+    patient_id: str = Query(..., alias="patient_id")  # Corrected query parameter
 ):
-    # Retrieve user role and ID from the authenticated user context
     role = current_user.get("role")
-    
+    current_user_id = current_user.get("user_id")  # Assuming user
     # Check if the role is "Client"
     if role != "Client":
         raise HTTPException(status_code=403, detail="RBAC unauthorized!")
     
     # Query the patient record based on user_id from the query parameter
-    db_patient = db.query(modelsmysql.Patient).filter(modelsmysql.Patient.User_ID == user_id).first()
+    db_patient = db.query(modelsmysql.Patient).filter(modelsmysql.Patient.User_ID == patient_id).first()
     
     # Query the clinical services for this patient
     db_clinical_services = db.query(modelsmysql.Clinical_services).filter(
-        modelsmysql.Clinical_services.Patient_ID == user_id
+        modelsmysql.Clinical_services.Patient_ID == patient_id
     ).all()
     
     # Check if the patient record exists
