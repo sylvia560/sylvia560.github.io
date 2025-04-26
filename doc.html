@@ -349,6 +349,7 @@
 
         function handleEditPatient(patientId) {
             const email = localStorage.getItem('email'); // Get doctor's email from local storage
+            const userId = localStorage.getItem('user_id'); // Get doctor's user ID from local storage
             window.location.href = `OTP_login.html?patient_id=${patientId}&email=${email}`;
         }
     </script>
