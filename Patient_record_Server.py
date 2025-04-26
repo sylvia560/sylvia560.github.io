@@ -1,4 +1,4 @@
-from fastapi import FastAPI ,HTTPException ,Depends ,status, Request,Body,Form,APIRouter
+from fastapi import FastAPI ,HTTPException ,Depends ,status, Request,Body,Form,APIRouter, Query
 from pydantic import BaseModel
 from typing import Annotated
 import modelsmysql
@@ -415,22 +415,29 @@ async def delete_patient(
 @Patient_record_router.get("/patients", response_model=PatientBase)
 async def get_patient(
     current_user: dict = Depends(get_current_user), 
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    user_id: str = Query(..., alias="user_id")  # Ensures the query parameter is used
 ):
-    user_id = current_user["user_id"]
-    role = current_user["role"]
+    # Retrieve user role and ID from the authenticated user context
+    role = current_user.get("role")
     
+    # Check if the role is "Client"
     if role != "Client":
         raise HTTPException(status_code=403, detail="RBAC unauthorized!")
-
+    
+    # Query the patient record based on user_id from the query parameter
     db_patient = db.query(modelsmysql.Patient).filter(modelsmysql.Patient.User_ID == user_id).first()
+    
+    # Query the clinical services for this patient
     db_clinical_services = db.query(modelsmysql.Clinical_services).filter(
         modelsmysql.Clinical_services.Patient_ID == user_id
     ).all()
     
+    # Check if the patient record exists
     if db_patient is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Patient record not found")
 
+    # Return the patient data, decrypting any sensitive fields
     return {
         "User_ID": db_patient.User_ID,
         "Patient_ID_Clinical": db_patient.Patient_ID_Clinical,
