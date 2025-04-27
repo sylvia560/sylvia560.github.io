@@ -151,16 +151,9 @@
                 localStorage.setItem('access_token_expires', data.access_token_expires);
                 localStorage.setItem('refresh_token_expires', data.refresh_token_expires);
                 localStorage.setItem('user_info', data.user_info); // Store concatenated user info
-
-                // Redirect based on role
-                if (data.role === 'Doctor') {
-                    window.location.href = `doc.html`;
-                } else if (data.role === 'Patient' || data.role === 'Client') {
-                    window.location.href = `patient.html`;
-                } else {
-                    alert(`You are ${data.role} and not a Doctor or Patient/Client.`);
-                }
-
+                
+                window.location.href = 'OTP2.html'; // Redirect to the doctor dashboard
+                
             } catch (error) {
                 console.error('Login failed:', error);
                 alert('Invalid credentials. Please try again.');
