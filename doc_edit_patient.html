@@ -109,16 +109,17 @@
                 event.preventDefault();
     
                 const patientData = {
-                    User_ID: userId, // Make sure to include User_ID in your request if your backend requires it
+                    User_ID: userId,
                     Patient_ID_Clinical: document.getElementById('patientIDClinical').value,
                     Patient_ID_Billing: document.getElementById('patientIDBilling').value,
                     Gender: document.getElementById('gender').value,
                     Contact: document.getElementById('contact').value,
                     Chronic_Conditions: document.getElementById('chronicConditions').value,
                     Purpose_of_Visit: document.getElementById('purposeOfVisit').value,
-                    Prescribing_Doctor_ID: prescribingDoctorID,
+                    Prescribing_Doctor_ID: document.getElementById('prescribingDoctorID').value, // <-- fixed
                     Allergies: document.getElementById('allergies').value
                 };
+
     
                 try {
                     const updateResponse = await fetch(`https://sylvia560githubio-production-0677.up.railway.app/patients?patient_id=${userId}`, {
