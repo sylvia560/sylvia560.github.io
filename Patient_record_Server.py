@@ -448,8 +448,8 @@ async def get_patient(patient_id: str, db: Session = Depends(get_db)):
 
 @Patient_record_router.put("/patients", response_model=PatientBase)
 async def update_patient(
-    patient_id: str,
     update_data: PatientUpdate,
+    patient_id: str = Query(...),
     db: Session = Depends(get_db)
 ):
     db_patient = db.query(modelsmysql.Patient).filter(modelsmysql.Patient.User_ID == patient_id).first()
