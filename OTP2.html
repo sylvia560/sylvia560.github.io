@@ -64,12 +64,12 @@
                 const urlParams = new URLSearchParams(window.location.search);
                 const patientId = urlParams.get('patient_id');
                 // Redirect based on role
-                if (data.role === 'Doctor') {
+                if (role === 'Doctor') {
                     window.location.href = `doc.html`;
-                } else if (data.role === 'Patient' || data.role === 'Client') {
+                } else if (role === 'Patient' || role === 'Client') {
                     window.location.href = `patient.html`;
                 } else {
-                    alert(`You are ${data.role} and not a Doctor or Patient/Client.`);
+                    alert(`You are ${role} and not a Doctor or Patient/Client.`);
                 }
             } 
             if (result.message === "Failed to verify OTP!") {
