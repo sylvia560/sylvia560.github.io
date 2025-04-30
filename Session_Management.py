@@ -6,7 +6,7 @@ from dbtestmysql import engine,SessionLocal
 from sqlalchemy.orm import Session
 from datetime import datetime
 from typing import List,Optional
-from modelsmysql import Patient,auth, Billing, Doctors,Clinical_services,Nurses # Import models from external file
+from modelsmysql import Patient,auth, Billing, Doctors,Clinical_services,Nurses,AuthResponse # Import models from external file
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse
@@ -78,7 +78,7 @@ class RefreshTokenRequest(BaseModel):
     os: Optional[str] = None
     browser: Optional[str] = None
 
-@Session_Management_router.post("/auth", response_model=auth)
+@Session_Management_router.post("/auth", response_model=None)
 def authenticate_user(db: db_dependency, username: str = Form(...), password: str = Form(...)):
     user = db.query(auth).filter(auth.Email == username).first()
     if not user:
@@ -91,7 +91,7 @@ def authenticate_user(db: db_dependency, username: str = Form(...), password: st
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid password"
         )
-    return user
+    return AuthResponse.from_orm(user)  # Convert to Pydantic model
 
 
 # In-memory revoked tokens set (for short-lived tokens)

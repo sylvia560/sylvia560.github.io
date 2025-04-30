@@ -25,7 +25,18 @@ class Doctors(Base):
     # Relationship to Patient (one-to-many: one doctor can have many patients)
     patients = relationship("Patient", back_populates="prescribing_doctor")
 
+from pydantic import BaseModel
+
+class AuthResponse(BaseModel):
+    User_ID: int
+    Username: str
+    Email: str
+    Role: str
+    # Include only the fields you want to return
     
+    class Config:
+        orm_mode = True
+           
 class auth(Base):
     __tablename__ = "authentication"
     User_ID = Column(Integer, primary_key=True, index=True)
