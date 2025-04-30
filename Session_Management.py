@@ -78,20 +78,33 @@ class RefreshTokenRequest(BaseModel):
     os: Optional[str] = None
     browser: Optional[str] = None
 
-@Session_Management_router.post("/auth", response_model=AuthResponse)
-def authenticate_user(db: db_dependency, username: str = Form(...), password: str = Form(...)):
+@Session_Management_router.post("/auth")
+def authenticate_user(
+    db: db_dependency,
+    username: str = Form(...),
+    password: str = Form(...)
+):
+    # 1. Find the user in the database
     user = db.query(auth).filter(auth.Email == username).first()
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid email"
+            detail="User not found"
         )
+
+    # 2. Check the password
     if not bcrypt.checkpw(password.encode('utf-8'), user.Password.encode('utf-8')):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid password"
+            detail="Incorrect password"
         )
-    return AuthResponse.from_orm(user)  # Convert to Pydantic model
+
+    # 3. Return only necessary user data (avoid sending password)
+    return {
+        "User_ID": user.User_ID,
+        "Email": user.Email,
+        "Role": user.Role,
+    }
 
 
 # In-memory revoked tokens set (for short-lived tokens)

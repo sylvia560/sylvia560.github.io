@@ -75,10 +75,12 @@
   
       // Event: Login Form Submit
       document.getElementById('login-form').addEventListener('submit', async function(event) {
-          event.preventDefault();
-          const formData = new FormData(this);
-          const username = formData.get('username');
-          const password = formData.get('password');
+        event.preventDefault();
+        const formData = new FormData(this);
+        const username = formData.get('username'); // Should match the backend's expected field
+        const password = formData.get('password');
+
+        console.log("Submitting:", { username, password }); // Debug log
   
           try {
               const position = await getLocation();
