@@ -78,7 +78,7 @@ class RefreshTokenRequest(BaseModel):
     os: Optional[str] = None
     browser: Optional[str] = None
 
-@Session_Management_router.post("/auth", response_model=None)
+@Session_Management_router.post("/auth", response_model=AuthResponse)
 def authenticate_user(db: db_dependency, username: str = Form(...), password: str = Form(...)):
     user = db.query(auth).filter(auth.Email == username).first()
     if not user:
