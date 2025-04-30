@@ -78,8 +78,9 @@ class RefreshTokenRequest(BaseModel):
     os: Optional[str] = None
     browser: Optional[str] = None
 
+@Session_Management_router.post("/auth", response_model=auth)
 #This function checks for the entered email and password 1 Factor authentication:
-def authenticate_user(email: str, password: str, db):
+async def authenticate_user(email: str, password: str, db):
     user = db.query(auth).filter(auth.Email == email).first()
     if not user:
         return False #There is no user ind db with this username
@@ -223,6 +224,9 @@ async def revoke_token(token: str = Depends(oauth2_bearer)):
     """Revokes the current user's token by adding it to the blocklist."""
     REVOKED_TOKENS.add(token)  # Add to in-memory set
     return {"message": "Token revoked successfully"}
+
+
+
 
 @Session_Management_router .post("/auth/login", response_model=Token)
 async def login_for_access_token(
