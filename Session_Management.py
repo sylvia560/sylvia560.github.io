@@ -27,6 +27,8 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 import os,base64
 import base64  # Add this import at the top of your file
+import requests
+
 
 Session_Management_router = APIRouter(
     tags=["Session Management"]  # Optional OpenAPI tag
@@ -49,8 +51,8 @@ class RefreshTokenRequest(BaseModel):
 # Secret key and algorithm for JWT
 SECRET_KEY = "your-secret-key"  # Replace with a strong secret key in production
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 1  # Increased for better user experience
-REFRESH_TOKEN_EXPIRE_MINUTES = 2
+ACCESS_TOKEN_EXPIRE_MINUTES = 5 # Increased for better user experience
+REFRESH_TOKEN_EXPIRE_MINUTES = 5
 key_session = os.urandom(32)  # 256-bit key
 # OAuth2 scheme for token authentication
 oauth2_bearer = OAuth2PasswordBearer(tokenUrl="/auth/login")
@@ -70,20 +72,52 @@ class Token(BaseModel):
     user_info: str  # Changed from bytes to str for JSON serialization
     
 class RefreshTokenRequest(BaseModel):
+    access_token: str
     refresh_token: str
     current_location: str
     os: Optional[str] = None
     browser: Optional[str] = None
 
-
+#This function checks for the entered email and password 1 Factor authentication:
 def authenticate_user(email: str, password: str, db):
     user = db.query(auth).filter(auth.Email == email).first()
     if not user:
-        return False
+        return False #There is no user ind db with this username
     if not bcrypt.checkpw(password.encode('utf-8'), user.Password.encode('utf-8')):
-        return False
-    return user
+        return False #The entered password is incorrect
+    return user #Success
 
+
+# In-memory revoked tokens set (for short-lived tokens)
+REVOKED_TOKENS = set()
+
+
+async def get_current_user(token: Annotated[str, Depends(oauth2_bearer)]):
+    try:
+        # First check if token is revoked
+        if token in REVOKED_TOKENS:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Token has been revoked"
+            )
+
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        if payload.get('type') != 'access':
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Invalid token type')
+        email: str = payload.get('sub')
+        user_id: int = payload.get('id')
+        role: str = payload.get('role')
+        user_info: str = payload.get('user_info')  # Extract concatenated user info from the token payload
+        if email is None or user_id is None or role is None or user_info is None:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Could not validate user')
+        return {'email': email, 'user_id': user_id, 'role': role, 'user_info': user_info ,'token':token}
+    except JWTError as e:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=f'Could not validate user: {str(e)}')
+
+
+
+#This function is responsible for the Token creation and notice that returned value includes the credentials which
+#will be an authorized token form due to including the secret key of the server
 def create_token(email: str, user_id: int, role: str, expires_delta: timedelta, token_type: str, user_info: str):
     encode = {
         'sub': email,
@@ -95,6 +129,100 @@ def create_token(email: str, user_id: int, role: str, expires_delta: timedelta, 
     }
     return jwt.encode(encode, SECRET_KEY, algorithm=ALGORITHM)
 
+class BanRequest(BaseModel):
+    user_id: int
+    ban_minutes: int = 15  # Default 15 minute ban
+
+async def ban_user(
+    ban_request: BanRequest,
+    db: Session
+):
+    """
+    Bans a user for specified duration
+    
+    Args:
+        ban_request: BanRequest containing user_id and ban_minutes
+        db: SQLAlchemy session
+        
+    Returns:
+        dict: Ban confirmation with status, user_id and banned_until
+        
+    Raises:
+        HTTPException: If user not found or database error
+    """
+    # Find the user
+    user = db.query(auth).filter(auth.User_ID == ban_request.user_id).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+    
+    # Calculate ban expiration time
+    ban_duration = timedelta(minutes=ban_request.ban_minutes)
+    user.banned_until = datetime.now() + ban_duration
+    
+    try:
+        db.commit()
+        return {
+            "status": "success",
+            "user_id": user.User_ID,
+            "banned_until": user.banned_until,
+        }
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to ban user: {str(e)}"
+        )
+        
+#to use the ban
+#  if action_type == "ban":
+#         # Create a BanRequest object
+#         ban_request = BanRequest(
+#             user_id=user_id,
+#             ban_minutes=60,  # 1 hour ban
+#         )
+#ban_result = await ban_user(ban_request, db)
+
+@Session_Management_router.post("/ban-user/", status_code=status.HTTP_200_OK)
+async def ban_user(
+    ban_request: BanRequest,
+    db: Session = Depends(get_db)  # Assuming you have a get_db dependency
+):
+    # Find the user
+    user = db.query(auth).filter(auth.User_ID == ban_request.user_id).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+    
+    # Calculate ban expiration time
+    ban_duration = timedelta(minutes=ban_request.ban_minutes)
+    user.banned_until = datetime.now() + ban_duration
+    
+    # Optional: Store ban reason if you have that column
+    # user.ban_reason = ban_request.reason
+    
+    try:
+        db.commit()
+        return {
+            "status": "success",
+            "user_id": user.User_ID,
+            "banned_until": user.banned_until,
+        }
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to ban user: {str(e)}"
+        )      
+#@Patient_record_router.post("/revoke-token")
+async def revoke_token(token: str = Depends(oauth2_bearer)):
+    """Revokes the current user's token by adding it to the blocklist."""
+    REVOKED_TOKENS.add(token)  # Add to in-memory set
+    return {"message": "Token revoked successfully"}
 
 @Session_Management_router .post("/auth/login", response_model=Token)
 async def login_for_access_token(
@@ -105,9 +233,42 @@ async def login_for_access_token(
     browser: Optional[str] = Form(None)
 ):
     user = authenticate_user(form_data.username, form_data.password, db)
+    logstash_url = "http://localhost:5044"
     if not user:
+        user_info1 = {
+            "username": form_data.username,
+            "location": current_location,
+            "os": os,
+            "browser": browser,
+            "status" : 'failed' }
+        requests.post(logstash_url, json=user_info1)
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Couldn't validate this user")
+    # Check if user is banned
+    if user.banned_until and user.banned_until > datetime.now():
+        remaining_time = user.banned_until - datetime.now()
+        remaining_minutes = int(remaining_time.total_seconds() / 60)
+        
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Account is temporarily banned. Try again in {remaining_minutes} minutes."
+        )
     
+    # Send data to Logstash
+    # Prepare data for Logstash
+    user_info = {
+        "username": form_data.username,
+        "location": current_location,
+        "os": os,
+        "browser": browser,
+        "email": user.Email,
+        "user_id": user.User_ID,
+        "Role": user.Role,
+        "status": "SUCCESSFUL"
+    }
+
+    
+    requests.post(logstash_url, json=user_info)
+
     # Concatenate loc, os, and browser into a single string
     user_info_before_encryption = f"loc: {current_location}, os: {os}, browser: {browser}"
     
@@ -143,7 +304,8 @@ async def login_for_access_token(
 async def refresh_access_token(db: db_dependency, request: RefreshTokenRequest = Body(...)):
     try:
         print(f"Incoming request: {request}")  # Log the incoming request
-
+        accesst=request.access_token
+        get_current_user(accesst)
         # Decode the refresh token
         payload = jwt.decode(request.refresh_token, SECRET_KEY, algorithms=[ALGORITHM])
         print(f"Decoded payload: {payload}")  # Log the decoded payload
@@ -157,6 +319,15 @@ async def refresh_access_token(db: db_dependency, request: RefreshTokenRequest =
         if datetime.utcnow() > datetime.fromtimestamp(payload.get('exp')):
             print("Refresh token has expired")
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Refresh token has expired')
+        
+        
+        # Time left before token expires
+        time_remaining =  datetime.utcnow()-datetime.fromtimestamp(payload.get('exp')) 
+
+        # Check if more than (1/1.5 ≈ 60%) of the lifetime remains
+        if (time_remaining > timedelta(minutes=REFRESH_TOKEN_EXPIRE_MINUTES / 1.5)) and (time_remaining > timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES / 1.5)):
+            print("Refresh token overload")
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Refresh token overload')
 
         # Extract user details from the token
         email: str = payload.get('sub')
@@ -296,7 +467,7 @@ def haversine(lat1, lon1, lat2, lon2):
     # Haversine formula
     dlat = lat2 - lat1
     dlon = lon2 - lon1
-    a = sin(dlat / 2)**2 + cos(lat1) * cos(lat2) * sin(dlon / 2)**2
+    a = sin(dlat / 2)*2 + cos(lat1) * cos(lat2) * sin(dlon / 2)*2
     c = 2 * atan2(sqrt(a), sqrt(1 - a))
     
     # Radius of Earth in kilometers

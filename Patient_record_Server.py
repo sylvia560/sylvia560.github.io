@@ -15,9 +15,9 @@ from sqlalchemy.orm import Session
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 import math,uuid
 from jose import jwt, JWTError, ExpiredSignatureError
-from Session_Management import SECRET_KEY,ALGORITHM,oauth2_bearer
 from cryptography.fernet import Fernet
 from cryptography.fernet import InvalidToken
+from Session_Management import SECRET_KEY,ALGORITHM,oauth2_bearer,REVOKED_TOKENS,revoke_token,get_current_user
 
 # Generate a key for encryption/decryption (store this securely)
 ENCRYPTION_KEY = "dVis0RwmM8y9jvckrSxFM3WrHOQfvbNN9gstq7CT8S4="
@@ -208,6 +208,7 @@ async def get_doctor_details(current_user: dict = Depends(get_current_user), db:
             "Department_Name_x": doctor_data.Department_Name_x,
         }
     else:
+        revoke_token(current_user["token"])
         raise HTTPException(status_code=403, detail="RBAC unauthorized !")
  
 
@@ -234,6 +235,7 @@ async def get_nurse(current_user: dict = Depends(get_current_user), db: Session 
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Nurse not found")
         return db_nurse
     else:
+        revoke_token(current_user["token"])
         raise HTTPException(status_code=403, detail="RBAC unauthorized !")
 
 # POST endpoint to create a new clinical service record
@@ -269,6 +271,7 @@ async def get_clinical_service(current_user: dict = Depends(get_current_user), d
             "Treatment_Details": decrypt_data(db_service.Treatment_Details),
             "Department_Name": db_service.Department_Name}
     else:
+        revoke_token(current_user["token"])
         raise HTTPException(status_code=403, detail="RBAC unauthorized !")
 
 
@@ -294,6 +297,7 @@ async def get_billing(current_user: dict = Depends(get_current_user), db: Sessio
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Billing record not found")
         return db_billing
     else:
+        revoke_token(current_user["token"])
         raise HTTPException(status_code=403, detail="RBAC unauthorized !")
 
 
@@ -406,6 +410,7 @@ async def delete_patient(
                 detail=f"An error occurred while deleting the patient record: {str(e)}"
             )     
     else:
+        revoke_token(current_user["token"])
         raise HTTPException(status_code=403, detail="RBAC unauthorized !") 
         
         
@@ -532,6 +537,7 @@ async def get_patient(current_user: dict = Depends(get_current_user), db: Sessio
         
         return response_data
     else:
+        revoke_token(current_user["token"])
         raise HTTPException(status_code=403, detail="RBAC unauthorized !")
 
 
@@ -629,6 +635,7 @@ def read_patient_with_billing(current_user: dict = Depends(get_current_user), db
     if (Role == "Client"):
         return get_patient_with_billing(db, user_id)
     else:
+        revoke_token(current_user["token"])
         raise HTTPException(status_code=403, detail="RBAC unauthorized!")
 
 
@@ -694,6 +701,7 @@ def read_patients_by_doctor(current_user: dict = Depends(get_current_user), db: 
     if(Role=="Doctor"):
         return get_patients_by_doctor(db, doctor_id)
     else:
+        revoke_token(current_user["token"])
         raise HTTPException(status_code=403, detail="RBAC unauthorized !")
         
 
@@ -745,4 +753,5 @@ def read_clinical_services_by_nurse(current_user: dict = Depends(get_current_use
     if(Role=="Nurse"):
         return get_clinical_services_by_nurse(db, nurse_id)
     else:
+        revoke_token(current_user["token"])
         raise HTTPException(status_code=403, detail="RBAC unauthorized !")
