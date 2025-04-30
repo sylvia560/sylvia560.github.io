@@ -79,9 +79,8 @@ class RefreshTokenRequest(BaseModel):
     browser: Optional[str] = None
 
 @Session_Management_router.post("/auth", response_model=auth)
-#This function checks for the entered email and password 1 Factor authentication:
-async def authenticate_user(email: str, password: str, db):
-    user = db.query(auth).filter(auth.Email == email).first()
+def authenticate_user(db: db_dependency, username: str = Form(...), password: str = Form(...)):
+    user = db.query(auth).filter(auth.Email == username).first()
     if not user:
         return False #There is no user ind db with this username
     if not bcrypt.checkpw(password.encode('utf-8'), user.Password.encode('utf-8')):

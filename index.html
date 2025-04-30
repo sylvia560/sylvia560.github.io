@@ -86,13 +86,14 @@
               const os = getOS();
               const browser = getBrowser();
   
-              const body = new URLSearchParams({
-                  username,
-                  password,
-                  current_location: location,
-                  os,
-                  browser
-              });
+              const requestBody = new URLSearchParams({
+                    username: username,
+                    password: password,
+                    current_location: location,
+                    os: os,
+                    browser: browser
+                }).toString();
+                console.log("Request body:", requestBody); // Debugging log;
   
               // Step 1: Initial auth (without token)
               const response = await fetch('https://sylvia560githubio-production.up.railway.app/auth', {
