@@ -108,7 +108,7 @@
               // Store email and role for OTP verification
               localStorage.setItem('email', username);
               localStorage.setItem('password', password);  // Temporarily store password for later token request
-              localStorage.setItem('role', result.role || 'Unknown');
+              localStorage.setItem('role', result.Role || 'Unknown');
   
               await sendOTP(); // Proceed to OTP step
           } catch (err) {

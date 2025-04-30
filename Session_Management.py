@@ -82,10 +82,16 @@ class RefreshTokenRequest(BaseModel):
 def authenticate_user(db: db_dependency, username: str = Form(...), password: str = Form(...)):
     user = db.query(auth).filter(auth.Email == username).first()
     if not user:
-        return False #There is no user ind db with this username
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid email"
+        )
     if not bcrypt.checkpw(password.encode('utf-8'), user.Password.encode('utf-8')):
-        return False #The entered password is incorrect
-    return user #Success
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid password"
+        )
+    return user
 
 
 # In-memory revoked tokens set (for short-lived tokens)
