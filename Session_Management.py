@@ -78,20 +78,24 @@ class RefreshTokenRequest(BaseModel):
     os: Optional[str] = None
     browser: Optional[str] = None
 
-@Session_Management_router.post("/auth", response_model=AuthResponse)
-def authenticate_user(db: db_dependency, username: str = Form(...), password: str = Form(...)):
+@Session_Management_router.post("/auth")
+async def authenticate_user(
+    db: db_dependency,
+    username: str = Form(...),
+    password: str = Form(...)
+):
     user = db.query(auth).filter(auth.Email == username).first()
     if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid email"
-        )
-    if not bcrypt.checkpw(password.encode('utf-8'), user.Password.encode('utf-8')):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid password"
-        )
-    return AuthResponse.from_orm(user)  # Convert to Pydantic model
+        raise HTTPException(status_code=401, detail="Invalid email")
+    if not bcrypt.checkpw(password.encode(), user.Password.encode()):
+        raise HTTPException(status_code=401, detail="Invalid password")
+    
+    return {  # Explicit JSON response
+        "status": "success",
+        "email": user.Email,
+        "role": user.Role,  # Ensure this matches your frontend expectation
+        "user_id": user.User_ID
+    }
 
 
 # In-memory revoked tokens set (for short-lived tokens)
