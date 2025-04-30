@@ -39,7 +39,7 @@ app.include_router(Session_Management.Session_Management_router)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://sylvia560.github.io"],  # Change to ["http://127.0.0.1:5500"] for security
+    allow_origins=["*"],  # Change to ["http://127.0.0.1:5500"] for security
     allow_credentials=True,
     allow_methods=["*"],  # Allow all HTTP methods (GET, POST, etc.)
     allow_headers=["*"],  # Allow all headers
