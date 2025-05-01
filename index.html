@@ -92,7 +92,6 @@
                 const authResponse = await fetch('https://sylvia560githubio-production.up.railway.app/auth', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    mode: 'cors',
                     body: new URLSearchParams({
                         username: email,
                         password: password
@@ -116,7 +115,7 @@
             } catch (error) {
                 console.error("Login error:", error);
                 document.getElementById("message").textContent = error.message;
-                alert("Login failed: " + error.message);
+                alert("Login failed btw: " + error.message);
             }
         });
 
