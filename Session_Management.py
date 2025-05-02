@@ -78,7 +78,7 @@ class RefreshTokenRequest(BaseModel):
     os: Optional[str] = None
     browser: Optional[str] = None
 
-@Session_Management_router.post("/auth")
+@Session_Management_router.post("/auth/authenticate")
 async def authenticate_user(
     db: db_dependency,
     credentials: dict = Body(...)
