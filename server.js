@@ -8,7 +8,7 @@ app.use(cors());
 app.use(bodyParser.json());
 
 let otpStore = {};
-let attemptsStore = {}; // Store failed attempts per email
+let attemptsStore = {}; // Store failed attempts for email
 
 const transporter = nodemailer.createTransport({
     service: 'gmail',
