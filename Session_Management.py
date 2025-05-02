@@ -250,7 +250,7 @@ async def login_for_access_token(
     os: Optional[str] = Form(None),
     browser: Optional[str] = Form(None)
 ):
-    user = authenticate_user(form_data.username, form_data.password, db)
+    user = authenticate_user(db, credentials={"username": form_data.username, "password": form_data.password})
     logstash_url = "http://localhost:5044"
     if not user:
         user_info1 = {
