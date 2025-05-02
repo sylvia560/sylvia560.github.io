@@ -81,9 +81,14 @@ class RefreshTokenRequest(BaseModel):
 @Session_Management_router.post("/auth")
 async def authenticate_user(
     db: db_dependency,
-    username: str = Form(...),
-    password: str = Form(...)
+    credentials: dict = Body(...)
 ):
+    username = credentials.get("username")
+    password = credentials.get("password")
+    
+    if not username or not password:
+        raise HTTPException(status_code=400, detail="Username and password are required")
+    
     user = db.query(auth).filter(auth.Email == username).first()
     if not user:
         raise HTTPException(status_code=401, detail="Invalid email")
