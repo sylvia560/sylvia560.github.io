@@ -278,9 +278,9 @@ async def login_for_access_token(
         "location": current_location,
         "os": os,
         "browser": browser,
-        "email": user.Email,
-        "user_id": user.User_ID,
-        "Role": user.Role,
+        "email": user.email,
+        "user_id": user.user_id,
+        "Role": user.role,
         "status": "SUCCESSFUL"
     }
 
