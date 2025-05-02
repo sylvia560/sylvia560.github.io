@@ -262,14 +262,14 @@ async def login_for_access_token(
         requests.post(logstash_url, json=user_info1)
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Couldn't validate this user")
     # Check if user is banned
-    if user.banned_until and user.banned_until > datetime.now():
-        remaining_time = user.banned_until - datetime.now()
-        remaining_minutes = int(remaining_time.total_seconds() / 60)
+    # if user.banned_until and user.banned_until > datetime.now():
+    #     remaining_time = user.banned_until - datetime.now()
+    #     remaining_minutes = int(remaining_time.total_seconds() / 60)
         
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail=f"Account is temporarily banned. Try again in {remaining_minutes} minutes."
-        )
+    #     raise HTTPException(
+    #         status_code=status.HTTP_403_FORBIDDEN,
+    #         detail=f"Account is temporarily banned. Try again in {remaining_minutes} minutes."
+    #     )
     
     # Send data to Logstash
     # Prepare data for Logstash
@@ -285,7 +285,7 @@ async def login_for_access_token(
     }
 
     
-    requests.post(logstash_url, json=user_info)
+    # requests.post(logstash_url, json=user_info)
 
     # Concatenate loc, os, and browser into a single string
     user_info_before_encryption = f"loc: {current_location}, os: {os}, browser: {browser}"
