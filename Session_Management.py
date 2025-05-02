@@ -273,6 +273,7 @@ async def login_for_access_token(
     
     # Send data to Logstash
     # Prepare data for Logstash
+    print(user)
     user_info = {
         "username": form_data.username,
         "location": current_location,
