@@ -17,7 +17,7 @@ const transporter = nodemailer.createTransport({
         pass: 'gmzuvpsxkcwpkdwk'
     }
 });
-
+// this is server.js file
 app.post('/send-otp', (req, res) => {
     const { email } = req.body;
     console.log("OTP requested for email:", email);
