@@ -163,6 +163,7 @@
                 });
                 const result = await otpResponse.json();
                 document.getElementById("message").innerText = result.message;
+                console.log(result.message);
 
                 if (result.message === "Failed to verify OTP!") {
                     const error = await otpResponse.json();
@@ -178,49 +179,49 @@
                     });
                 }
                 else {
-                    document.getElementById("message").textContent = "OTP verified successfully!";
-                    
-                // Step 2: Get tokens
-                const position = await getLocation();
-                const location = `${position.coords.latitude},${position.coords.longitude}`;
-                const os = getOS();
-                const browser = getBrowser();
-                console.log("LOGIN REQUEST:", email, password);
+                        document.getElementById("message").textContent = "OTP verified successfully!";
+                        
+                    // Step 2: Get tokens
+                    const position = await getLocation();
+                    const location = `${position.coords.latitude},${position.coords.longitude}`;
+                    const os = getOS();
+                    const browser = getBrowser();
+                    console.log("LOGIN REQUEST:", email, password);
 
-                const tokenResponse = await fetch('https://sylvia560githubio-production-0677.up.railway.app/auth/login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: new URLSearchParams({
-                        username: email,
-                        password: password,
-                        current_location: location,
-                        os: os,
-                        browser: browser
-                    })
-                });
+                    const tokenResponse = await fetch('https://sylvia560githubio-production-0677.up.railway.app/auth/login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: new URLSearchParams({
+                            username: email,
+                            password: password,
+                            current_location: location,
+                            os: os,
+                            browser: browser
+                        })
+                    });
 
-                if (!tokenResponse.ok) {
-                    const error = await tokenResponse.json();
-                    throw new Error(error.detail || "Login failed");
-                }
+                    if (!tokenResponse.ok) {
+                        const error = await tokenResponse.json();
+                        throw new Error(error.detail || "Login failed");
+                    }
 
-                const tokenData = await tokenResponse.json();
+                    const tokenData = await tokenResponse.json();
 
-                // Store tokens
-                localStorage.setItem('access_token', tokenData.access_token);
-                localStorage.setItem('refresh_token', tokenData.refresh_token);
-                localStorage.setItem('user_id', tokenData.user_id);
-                localStorage.setItem('access_token_expires', tokenData.access_token_expires);
-                localStorage.setItem('refresh_token_expires', tokenData.refresh_token_expires);
+                    // Store tokens
+                    localStorage.setItem('access_token', tokenData.access_token);
+                    localStorage.setItem('refresh_token', tokenData.refresh_token);
+                    localStorage.setItem('user_id', tokenData.user_id);
+                    localStorage.setItem('access_token_expires', tokenData.access_token_expires);
+                    localStorage.setItem('refresh_token_expires', tokenData.refresh_token_expires);
 
-                // Redirect based on role
-                if (role === 'Doctor') {
-                    window.location.href = 'doc.html';
-                } else if (role === 'Patient' || role === 'Client') {
-                    window.location.href = 'patient.html';
-                } else {
-                    alert(`No dashboard configured for role: ${role}`);
-                }
+                    // Redirect based on role
+                    if (role === 'Doctor') {
+                        window.location.href = 'doc.html';
+                    } else if (role === 'Patient' || role === 'Client') {
+                        window.location.href = 'patient.html';
+                    } else {
+                        alert(`No dashboard configured for role: ${role}`);
+                    }
 
                 }
 
