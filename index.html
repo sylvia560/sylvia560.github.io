@@ -99,6 +99,7 @@
                     console.log("Error in authentication response:", authResponse);
                     const error = await authResponse.json();
                     throw new Error(error.detail || "Invalid credentials");
+                    alert("Incorrect email or password. Please try again.");
                 }
 
                 const authData = await authResponse.json();
