@@ -166,10 +166,9 @@
                     const error = await otpResponse.json();
                     throw new Error(error.message || "OTP verification failed");
                 }
-
-                const otpResult = await otpResponse.json();
-                document.getElementById("message").textContent = otpResult.message;
-
+                else {
+                    document.getElementById("message").textContent = "OTP verified successfully!";
+                    
                 // Step 2: Get tokens
                 const position = await getLocation();
                 const location = `${position.coords.latitude},${position.coords.longitude}`;
@@ -210,9 +209,15 @@
                 } else {
                     alert(`No dashboard configured for role: ${role}`);
                 }
+
+                }
+
+                // const otpResult = await otpResponse.json();
+                // document.getElementById("message").textContent = otpResult.message;
+
             } catch (error) {
-                console.error("OTP verification error:", error);
-                alert("OTP verification failed: " + error.message);
+                console.error("Invalid credentials");
+                alert("Invalid credentials");
             }
         }
 
