@@ -265,16 +265,17 @@ async def login_for_access_token(
     # Send data to Logstash
     # Prepare data for Logstash wa2
     # print(user)
-    # user_info = {
-    #     "username": form_data.username,
-    #     "location": current_location,
-    #     "os": os,
-    #     "browser": browser,
-    #     "email": user.email,
-    #     "user_id": user.user_id,
-    #     "Role": user.role,
-    #     "status": "SUCCESSFUL"
-    # }
+    user_info = {
+         "username": form_data.username,
+         "location": current_location,
+         "os": os,
+         "browser": browser,
+         "email": user.email,
+         "user_id": user.user_id,
+         "Role": user.role,
+         "status": "SUCCESSFUL"
+     }
+    print(user_info)
 
     
     # # requests.post(logstash_url, json=user_info)
