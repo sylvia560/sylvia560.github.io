@@ -176,10 +176,10 @@
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
                                 user_username: email,
-                                ban_minutes: 15
+                                ban_minutes: 2
                             })
                         });
-                        alert("You have been temporarily banned for 15 minutes due to multiple failed OTP attempts.");
+                        alert("You have been temporarily banned for 2 minutes due to multiple failed OTP attempts.");
                     }
 
                     return;

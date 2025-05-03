@@ -156,7 +156,7 @@ def create_token(email: str, user_id: int, role: str, expires_delta: timedelta, 
 
 class BanRequest(BaseModel):
     user_username:str
-    ban_minutes: int = 15  # Default 15 minute ban
+    ban_minutes: int = 2  # Default 15 minute ban
 
 @Session_Management_router.post("/ban-user/", status_code=status.HTTP_200_OK)
 async def ban_user(
