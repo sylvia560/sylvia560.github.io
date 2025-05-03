@@ -275,7 +275,7 @@ async def login_for_access_token(
         #  "Role": user.role,
         #  "status": "SUCCESSFUL"
      }
-    print(user_info)
+   
 
     
     # # requests.post(logstash_url, json=user_info)
@@ -290,8 +290,8 @@ async def login_for_access_token(
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     refresh_token_expires = timedelta(minutes=REFRESH_TOKEN_EXPIRE_MINUTES)
     
-    access_token = create_token(user.email, user.User_ID, user.Role, access_token_expires, "access", user_info)
-    refresh_token = create_token(user.email, user.User_ID, user.Role, refresh_token_expires, "refresh", user_info)
+    access_token = create_token(user.email, user.user_id, user.role, access_token_expires, "access", user_info)
+    refresh_token = create_token(user.email, user.user_id, user.role, refresh_token_expires, "refresh", user_info)
     
     # Decode tokens to get expiry time
     access_token_payload = jwt.decode(access_token, SECRET_KEY, algorithms=[ALGORITHM])
@@ -302,9 +302,9 @@ async def login_for_access_token(
         'access_token': access_token,
         'refresh_token': refresh_token,
         'token_type': 'bearer',
-        'user_id': user.User_ID,
-        'email': user.Email,
-        'role': user.Role,
+        'user_id': user.user_id,
+        'email': user.email,
+        'role': user.role,
         'session_auth': 'active',  # Populate this field
         'access_token_expires': int(access_token_payload['exp']),  # Convert to timestamp
         'refresh_token_expires': int(refresh_token_payload['exp']),  # Convert to timestamp
