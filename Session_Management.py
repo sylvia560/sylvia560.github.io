@@ -270,7 +270,7 @@ async def login_for_access_token(
          "location": current_location,
          "os": os,
          "browser": browser,
-         "email": user.email,
+         "email": user.username,
          "user_id": user.user_id,
          "Role": user.role,
          "status": "SUCCESSFUL"
