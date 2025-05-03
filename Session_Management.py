@@ -251,16 +251,7 @@ async def login_for_access_token(
     browser: Optional[str] = Form(None)
 ):
     user = authenticate_user(db, credentials={"username": form_data.username, "password": form_data.password})
-    logstash_url = "http://localhost:5044"
-    if not user:
-        user_info1 = {
-            "username": form_data.username,
-            "location": current_location,
-            "os": os,
-            "browser": browser,
-            "status" : 'failed' }
-        requests.post(logstash_url, json=user_info1)
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Couldn't validate this user")
+    #raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Couldn't validate this user")
     # Check if user is banned
     # if user.banned_until and user.banned_until > datetime.now():
     #     remaining_time = user.banned_until - datetime.now()
@@ -273,20 +264,20 @@ async def login_for_access_token(
     
     # Send data to Logstash
     # Prepare data for Logstash wa2
-    print(user)
-    user_info = {
-        "username": form_data.username,
-        "location": current_location,
-        "os": os,
-        "browser": browser,
-        "email": user.email,
-        "user_id": user.user_id,
-        "Role": user.role,
-        "status": "SUCCESSFUL"
-    }
+    # print(user)
+    # user_info = {
+    #     "username": form_data.username,
+    #     "location": current_location,
+    #     "os": os,
+    #     "browser": browser,
+    #     "email": user.email,
+    #     "user_id": user.user_id,
+    #     "Role": user.role,
+    #     "status": "SUCCESSFUL"
+    # }
 
     
-    # requests.post(logstash_url, json=user_info)
+    # # requests.post(logstash_url, json=user_info)
 
     # Concatenate loc, os, and browser into a single string
     user_info_before_encryption = f"loc: {current_location}, os: {os}, browser: {browser}"
