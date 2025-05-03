@@ -166,11 +166,11 @@
                 document.getElementById("message").innerText = otpresult.message;
                 console.log(otpresult.message);
 
-                if (!otpResponse.ok || otpresult.message.includes("Invalid OTP") || otpresult.message.includes("Failed to verify OTP")) {
+                if (!otpResponse.ok) {
                     alert(otpresult.message);
 
-                    // Optional ban on reaching 3 failed attempts
-                    if (otpresult.message === "Failed to verify OTP!") {
+                    // Trigger ban only when server signals final failure (403 + specific message)
+                    if (otpResponse.status === 403 && otpresult.message === "Failed to verify OTP!") {
                         await fetch('https://sylvia560githubio-production-0677.up.railway.app/ban-user/', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
@@ -180,11 +180,11 @@
                             })
                         });
                         alert("You have been temporarily banned for 15 minutes due to multiple failed OTP attempts.");
-                        
                     }
 
-                    return; // ⛔ Exit early to prevent login
+                    return;
                 }
+
 
                 // ✅ OTP verified successfully — proceed to get tokens
                 const position = await getLocation();
