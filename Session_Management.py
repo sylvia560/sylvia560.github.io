@@ -95,6 +95,16 @@ async def authenticate_user(
     if not bcrypt.checkpw(password.encode(), user.Password.encode()):
         raise HTTPException(status_code=401, detail="Invalid password")
     
+      # Check if user is banned
+    if user.banned_until and user.banned_until > datetime.now():
+        remaining_time = user.banned_until - datetime.now()
+        remaining_minutes = int(remaining_time.total_seconds() / 60)
+        
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Account is temporarily banned. Try again in {remaining_minutes} minutes."
+        )
+    
     return {  # Explicit JSON response
         "status": "success",
         "email": user.Email,
@@ -145,60 +155,8 @@ def create_token(email: str, user_id: int, role: str, expires_delta: timedelta, 
     return jwt.encode(encode, SECRET_KEY, algorithm=ALGORITHM)
 
 class BanRequest(BaseModel):
-    user_id: int
+    user_username:str
     ban_minutes: int = 15  # Default 15 minute ban
-
-async def ban_user(
-    ban_request: BanRequest,
-    db: Session
-):
-    """
-    Bans a user for specified duration
-    
-    Args:
-        ban_request: BanRequest containing user_id and ban_minutes
-        db: SQLAlchemy session
-        
-    Returns:
-        dict: Ban confirmation with status, user_id and banned_until
-        
-    Raises:
-        HTTPException: If user not found or database error
-    """
-    # Find the user
-    user = db.query(auth).filter(auth.User_ID == ban_request.user_id).first()
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
-        )
-    
-    # Calculate ban expiration time
-    ban_duration = timedelta(minutes=ban_request.ban_minutes)
-    user.banned_until = datetime.now() + ban_duration
-    
-    try:
-        db.commit()
-        return {
-            "status": "success",
-            "user_id": user.User_ID,
-            "banned_until": user.banned_until,
-        }
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to ban user: {str(e)}"
-        )
-        
-#to use the ban
-#  if action_type == "ban":
-#         # Create a BanRequest object
-#         ban_request = BanRequest(
-#             user_id=user_id,
-#             ban_minutes=60,  # 1 hour ban
-#         )
-#ban_result = await ban_user(ban_request, db)
 
 @Session_Management_router.post("/ban-user/", status_code=status.HTTP_200_OK)
 async def ban_user(
@@ -206,7 +164,7 @@ async def ban_user(
     db: Session = Depends(get_db)  # Assuming you have a get_db dependency
 ):
     # Find the user
-    user = db.query(auth).filter(auth.User_ID == ban_request.user_id).first()
+    user = db.query(auth).filter(auth.Email == ban_request.user_username).first()
     if not user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -232,7 +190,18 @@ async def ban_user(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to ban user: {str(e)}"
-        )      
+        )
+        
+#to use the ban
+#  if action_type == "ban":
+#         # Create a BanRequest object
+#         ban_request = BanRequest(
+#             user_id=user_id,
+#             ban_minutes=60,  # 1 hour ban
+#         )
+#ban_result = await ban_user(ban_request, db)
+
+    
 #@Patient_record_router.post("/revoke-token")
 async def revoke_token(token: str = Depends(oauth2_bearer)):
     """Revokes the current user's token by adding it to the blocklist."""

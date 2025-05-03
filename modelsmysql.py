@@ -1,5 +1,5 @@
 from dbtestmysql import Base,engine
-from sqlalchemy import Double,Column,Integer,String ,ForeignKey,Boolean,BigInteger
+from sqlalchemy import Double,Column,Integer,String ,ForeignKey,Boolean,BigInteger,TIMESTAMP
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm import Session
 
@@ -48,6 +48,7 @@ class auth(Base):
     Role= Column(String(250))
     Last_Login_Date= Column(String(250))
     Activity_Logs= Column(String(250))
+    banned_until = Column(TIMESTAMP, nullable=True)
     
     
 class Nurses(Base):

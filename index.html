@@ -161,10 +161,21 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email, otp })
                 });
+                const result = await otpResponse.json();
+                document.getElementById("message").innerText = result.message;
 
-                if (!otpResponse.ok) {
+                if (result.message === "Failed to verify OTP!") {
                     const error = await otpResponse.json();
-                    throw new Error(error.message || "OTP verification failed");
+                    alert("Failed to verify OTP!");
+                    // throw new Error(error.message || "OTP verification failed");
+                    const ban = await fetch('https://sylvia560githubio-production-0677.up.railway.app/ban-user/', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            user_username: username,  // Make sure 'username' is defined in your code
+                            ban_minutes: 15           // Optional: you can change the duration as needed
+                        })
+                    });
                 }
                 else {
                     document.getElementById("message").textContent = "OTP verified successfully!";
