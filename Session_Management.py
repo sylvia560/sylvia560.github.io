@@ -250,6 +250,9 @@ async def login_for_access_token(
     os: Optional[str] = Form(None),
     browser: Optional[str] = Form(None)
 ):
+    print(f"Username: {form_data.username}")
+    print(f"Password: {form_data.password}")
+
     user_response = await authenticate_user(db, credentials={"username": form_data.username, "password": form_data.password})
     user = db.query(auth).filter(auth.Email == user_response["email"]).first()
     if not user:
@@ -264,6 +267,7 @@ async def login_for_access_token(
          "Role": user.role,
          "status": "SUCCESSFUL"
      }
+    print(f"User found in DB: {user}")
 
     # Concatenate loc, os, and browser into a single string
     user_info_before_encryption = f"loc: {current_location}, os: {os}, browser: {browser}"
