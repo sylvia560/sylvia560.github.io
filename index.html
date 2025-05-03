@@ -161,11 +161,11 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email, otp })
                 });
-                const result = await otpResponse.json();
-                document.getElementById("message").innerText = result.message;
-                console.log(result.message);
+                const otpresult = await otpResponse.json();
+                document.getElementById("message").innerText = otpresult.message;
+                console.log(otpresult.message);
 
-                if (result.message === "Failed to verify OTP!") {
+                if (otpresult.message === "Failed to verify OTP!") {
                     const error = await otpResponse.json();
                     alert("Failed to verify OTP!");
                     // throw new Error(error.message || "OTP verification failed");
@@ -179,7 +179,7 @@
                     });
                 }
                 else {
-                        document.getElementById("message").textContent = "OTP verified successfully!";
+                        // document.getElementById("message").textContent = "OTP verified successfully!";
                         
                     // Step 2: Get tokens
                     const position = await getLocation();
