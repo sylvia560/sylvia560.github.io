@@ -290,8 +290,8 @@ async def login_for_access_token(
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     refresh_token_expires = timedelta(minutes=REFRESH_TOKEN_EXPIRE_MINUTES)
     
-    access_token = create_token(user.Email, user.User_ID, user.Role, access_token_expires, "access", user_info)
-    refresh_token = create_token(user.Email, user.User_ID, user.Role, refresh_token_expires, "refresh", user_info)
+    access_token = create_token(user.email, user.User_ID, user.Role, access_token_expires, "access", user_info)
+    refresh_token = create_token(user.email, user.User_ID, user.Role, refresh_token_expires, "refresh", user_info)
     
     # Decode tokens to get expiry time
     access_token_payload = jwt.decode(access_token, SECRET_KEY, algorithms=[ALGORITHM])
