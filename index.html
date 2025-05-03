@@ -161,74 +161,76 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email, otp })
                 });
+
                 const otpresult = await otpResponse.json();
                 document.getElementById("message").innerText = otpresult.message;
                 console.log(otpresult.message);
 
-                if (otpresult.message === "Failed to verify OTP!") {
-                    const error = await otpResponse.json();
-                    alert("Failed to verify OTP!");
-                    // throw new Error(error.message || "OTP verification failed");
-                    const ban = await fetch('https://sylvia560githubio-production-0677.up.railway.app/ban-user/', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            user_username: username,  // Make sure 'username' is defined in your code
-                            ban_minutes: 15           // Optional: you can change the duration as needed
-                        })
-                    });
+                if (!otpResponse.ok || otpresult.message.includes("Invalid OTP") || otpresult.message.includes("Failed to verify OTP")) {
+                    alert(otpresult.message);
+
+                    // Optional ban on reaching 3 failed attempts
+                    if (otpresult.message === "Failed to verify OTP!") {
+                        await fetch('https://sylvia560githubio-production-0677.up.railway.app/ban-user/', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                user_username: username,
+                                ban_minutes: 15
+                            })
+                        });
+                    }
+
+                    return; // ⛔ Exit early to prevent login
                 }
-                else {
-                        // document.getElementById("message").textContent = "OTP verified successfully!";
-                        
-                    // Step 2: Get tokens
-                    const position = await getLocation();
-                    const location = `${position.coords.latitude},${position.coords.longitude}`;
-                    const os = getOS();
-                    const browser = getBrowser();
-                    console.log("LOGIN REQUEST:", email, password);
 
-                    const tokenResponse = await fetch('https://sylvia560githubio-production-0677.up.railway.app/auth/login', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                        body: new URLSearchParams({
-                            username: email,
-                            password: password,
-                            current_location: location,
-                            os: os,
-                            browser: browser
-                        })
-                    });
+                // ✅ OTP verified successfully — proceed to get tokens
+                const position = await getLocation();
+                const location = `${position.coords.latitude},${position.coords.longitude}`;
+                const os = getOS();
+                const browser = getBrowser();
+                console.log("LOGIN REQUEST:", email, password);
 
-                    if (!tokenResponse.ok) {
-                        const error = await tokenResponse.json();
-                        throw new Error(error.detail || "Login failed");
-                    }
+                const tokenResponse = await fetch('https://sylvia560githubio-production-0677.up.railway.app/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: new URLSearchParams({
+                        username: email,
+                        password: password,
+                        current_location: location,
+                        os: os,
+                        browser: browser
+                    })
+                });
 
-                    const tokenData = await tokenResponse.json();
+                if (!tokenResponse.ok) {
+                    const error = await tokenResponse.json();
+                    throw new Error(error.detail || "Login failed");
+                }
 
-                    // Store tokens
-                    localStorage.setItem('access_token', tokenData.access_token);
-                    localStorage.setItem('refresh_token', tokenData.refresh_token);
-                    localStorage.setItem('user_id', tokenData.user_id);
-                    localStorage.setItem('access_token_expires', tokenData.access_token_expires);
-                    localStorage.setItem('refresh_token_expires', tokenData.refresh_token_expires);
+                const tokenData = await tokenResponse.json();
 
-                    // Redirect based on role
-                    if (role === 'Doctor') {
-                        window.location.href = 'doc.html';
-                    } else if (role === 'Patient' || role === 'Client') {
-                        window.location.href = 'patient.html';
-                    } else {
-                        alert(`No dashboard configured for role: ${role}`);
-                    }
+                // Store tokens
+                localStorage.setItem('access_token', tokenData.access_token);
+                localStorage.setItem('refresh_token', tokenData.refresh_token);
+                localStorage.setItem('user_id', tokenData.user_id);
+                localStorage.setItem('access_token_expires', tokenData.access_token_expires);
+                localStorage.setItem('refresh_token_expires', tokenData.refresh_token_expires);
 
+                // Redirect based on role
+                if (role === 'Doctor') {
+                    window.location.href = 'doc.html';
+                } else if (role === 'Patient' || role === 'Client') {
+                    window.location.href = 'patient.html';
+                } else {
+                    alert(`No dashboard configured for role: ${role}`);
                 }
 
             } catch (error) {
                 console.error("Invalid credentials");
                 alert("Invalid credentials");
             }
+
         }
 
         // Token management
