@@ -1,14 +1,19 @@
 import pandas as pd
 from dbtestmysql import SessionLocal
-from modelsmysql import auth, Doctors, Nurses, Patient, Clinical_services, Billing
+from modelsmysql import auth
 
 def load_data_from_csv():
     session = SessionLocal()
     
-    # Step 1: Load and insert data into the 'auth' table.
+    # Load the CSV
     auth_df = pd.read_csv('authentication.csv')
-    auth_df = auth_df.where(pd.notnull(auth_df), None)
+    
     for index, row in auth_df.iterrows():
+        # Check and convert banned_until
+        banned_until_value = row['banned_until']
+        if pd.isna(banned_until_value) or str(banned_until_value).lower() == 'nat':
+            banned_until_value = None
+
         authentication = auth(
             User_ID=row['User_ID'],
             Username=row['Username'],
@@ -19,10 +24,16 @@ def load_data_from_csv():
             Role=row['Role'],
             Last_Login_Date=row['Last_Login_Date'],
             Activity_Logs=row['Activity_Logs'],
-            banned_until=row['banned_until']
+            banned_until=banned_until_value  # now safe
         )
         session.add(authentication)
-    '''
+    
+    session.commit()
+    session.close()
+
+load_data_from_csv()
+
+'''
     # Step 2: Load and insert data into the 'Doctors' table
     doctors_df = pd.read_csv('doctors.csv')
     for index, row in doctors_df.iterrows():
@@ -89,10 +100,4 @@ def load_data_from_csv():
             Amount_Paid=row['Amount_Paid']
         )
         session.add(billing)
-    '''
-    # Commit all changes and close the session
-    session.commit()
-    session.close()
-
-# Call the function to load data
-load_data_from_csv()
+'''
