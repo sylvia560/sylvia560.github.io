@@ -5,7 +5,7 @@ from modelsmysql import auth, Doctors, Nurses, Patient, Clinical_services, Billi
 def load_data_from_csv():
     session = SessionLocal()
     
-    # Step 1: Load and insert data into the 'auth' table
+    # Step 1: Load and insert data into the 'auth' table.
     auth_df = pd.read_csv('authentication.csv')
     for index, row in auth_df.iterrows():
         authentication = auth(
