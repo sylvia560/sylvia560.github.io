@@ -50,6 +50,9 @@ class auth(Base):
     Activity_Logs= Column(String(250))
     banned_until = Column(TIMESTAMP, nullable=True)
     
+    class Config:
+        from_attributes = True
+
     
 class Nurses(Base):
     __tablename__ = "nurses"
