@@ -7,6 +7,7 @@ def load_data_from_csv():
     
     # Step 1: Load and insert data into the 'auth' table.
     auth_df = pd.read_csv('authentication.csv')
+    auth_df = auth_df.where(pd.notnull(auth_df), None)
     for index, row in auth_df.iterrows():
         authentication = auth(
             User_ID=row['User_ID'],
