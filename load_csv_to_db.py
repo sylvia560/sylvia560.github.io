@@ -17,11 +17,11 @@ def load_data_from_csv():
             Email=row['Email'],
             Role=row['Role'],
             Last_Login_Date=row['Last_Login_Date'],
-            Activity_Logs=row['Activity_Logs']
-            # Note: Ignore 'OS' and 'Browser' columns as they are not in the schema
+            Activity_Logs=row['Activity_Logs'],
+            banned_until=row['banned_until']
         )
         session.add(authentication)
-    
+    '''
     # Step 2: Load and insert data into the 'Doctors' table
     doctors_df = pd.read_csv('doctors.csv')
     for index, row in doctors_df.iterrows():
@@ -88,7 +88,7 @@ def load_data_from_csv():
             Amount_Paid=row['Amount_Paid']
         )
         session.add(billing)
-    
+    '''
     # Commit all changes and close the session
     session.commit()
     session.close()

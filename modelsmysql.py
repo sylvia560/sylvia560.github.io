@@ -133,3 +133,11 @@ class Billing(Base):
         session.commit()
 
 delete_all_rows_from_all_tables()'''
+
+'''def delete_all_rows_from_authentication():
+    with Session(engine) as session:
+        session.execute(auth.__table__.delete())
+        session.commit()
+
+delete_all_rows_from_authentication()
+'''
