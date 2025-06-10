@@ -11,7 +11,7 @@ class Activity(Base):
     Working_Hours_Violation = Column(String(250))
     Last_Login_Date= Column(String(250))
     
-    
+  #hi  
 class Doctors(Base):
     __tablename__ = "doctors"
     
