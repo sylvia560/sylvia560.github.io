@@ -61,6 +61,8 @@ class Nurses(Base):
     Contact= Column(String(250))
     Shift_Hours= Column(String(250))
     
+    patients_with_nurse = relationship("Patient", back_populates="prescribing_nurse")
+    
     
 class Clinical_services(Base):
     __tablename__ = "clinical_services_modified"
@@ -95,7 +97,10 @@ class Patient(Base):
     
     # Relationship to Doctors (many-to-one)
     prescribing_doctor = relationship("Doctors", back_populates="patients_with_nurse")
-    Prescribing_Nurse_ID = relationship("Nurses", back_populates="patients_with_nurse")
+
+    # Relationship to Nurses (many-to-one)
+    prescribing_nurse = relationship("Nurses", back_populates="patients_with_nurse")
+
     
     # Relationship to Clinical_services (one-to-many)
     clinical_services = relationship("Clinical_services", back_populates="patient")
