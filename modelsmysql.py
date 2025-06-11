@@ -17,13 +17,12 @@ class Doctors(Base):
     
     Doctor_ID = Column(Integer, primary_key=True, index=True)
     Department_ID = Column(Integer)
-    Department_Name_x = Column(String(250))
     Contact = Column(String(250))
     Available_Hours = Column(String(250))
-    Department_Name_y = Column(String(250))
+    Department_Name = Column(String(250))
     
     # Relationship to Patient (one-to-many: one doctor can have many patients)
-    patients = relationship("Patient", back_populates="prescribing_doctor")
+    patients_with_nurse = relationship("Patient", back_populates="prescribing_doctor")
 
 from pydantic import BaseModel
 
@@ -58,15 +57,15 @@ class Nurses(Base):
     __tablename__ = "nurses"
     Nurse_ID = Column(Integer, primary_key=True, index=True)
     Department_ID=Column(Integer)
-    Department_Name_x= Column(String(250))
+    Medical_Specialization= Column(String(250))
     Contact= Column(String(250))
     Shift_Hours= Column(String(250))
-    Department_Name_y= Column(String(250))
+    
     
 class Clinical_services(Base):
     __tablename__ = "clinical_services_modified"
     
-    Patient_ID = Column(Integer, ForeignKey('patients.User_ID'), primary_key=True, index=True)
+    Patient_ID = Column(Integer, ForeignKey('patients_with_nurse.User_ID'), primary_key=True, index=True)
     Department_ID = Column(Integer)
     Medication_Name = Column(String(250))
     Dosage_Instructions = Column(String(250))
@@ -78,7 +77,7 @@ class Clinical_services(Base):
     patient = relationship("Patient", back_populates="clinical_services")
 
 class Patient(Base):
-    __tablename__ = "patients"
+    __tablename__ = "patients_with_nurse"
     
     User_ID = Column(Integer, primary_key=True, index=True)
     Patient_ID_Clinical = Column(Integer)
@@ -94,7 +93,7 @@ class Patient(Base):
     billing = relationship("Billing", back_populates="patient", uselist=False)
     
     # Relationship to Doctors (many-to-one)
-    prescribing_doctor = relationship("Doctors", back_populates="patients")
+    prescribing_doctor = relationship("Doctors", back_populates="patients_with_nurse")
     
     # Relationship to Clinical_services (one-to-many)
     clinical_services = relationship("Clinical_services", back_populates="patient")
@@ -119,7 +118,7 @@ class PatientUpdate(BaseModel):
 class Billing(Base):
     __tablename__ = "billing and finance (4)"
     
-    Patient_ID = Column(Integer, ForeignKey('patients.User_ID'), primary_key=True, index=True)
+    Patient_ID = Column(Integer, ForeignKey('patients_with_nurse.User_ID'), primary_key=True, index=True)
     Status = Column(String(250))
     Payment_Mode = Column(String(250))
     Amount_Paid = Column(Double)
