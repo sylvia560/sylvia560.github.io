@@ -55,10 +55,9 @@ db_dependency=Annotated[Session,Depends(get_db)]
 class DoctorsBase(BaseModel):
     Doctor_ID: int
     Department_ID: int
-    Department_Name_x: str
     Contact: str
     Available_Hours: str
-    Department_Name_y: str
+    Department_Name: str
 
     class Config:
         orm_mode = True    
@@ -67,10 +66,9 @@ class DoctorsBase(BaseModel):
 class NursesBase(BaseModel):
     Nurse_ID: int
     Department_ID: int
-    Department_Name_x: str
+    Department_Name: str
     Contact: str
     Shift_Hours: str
-    Department_Name_y: str
 
     class Config:
         orm_mode = True
@@ -106,6 +104,7 @@ class PatientBase(BaseModel):
     Chronic_Conditions: str
     Purpose_of_Visit: str
     Prescribing_Doctor_ID: int
+    Prescribing_Nurse_ID: int
 
     class Config:
         orm_mode = True
@@ -154,6 +153,22 @@ class PatientForDoctor(BaseModel):
     Chronic_Conditions: str
     Purpose_of_Visit: str
     Prescribing_Doctor_ID: int
+    clinical_services: list[ClinicalServicesBase] = []  # Include clinical services
+
+    class Config:
+        orm_mode = True
+
+class PatientForNurse(BaseModel):
+    User_ID: int
+    Patient_ID_Clinical: int
+    Patient_ID_Billing: int
+    Gender: str
+    Contact: str
+    Allergies: str
+    Chronic_Conditions: str
+    Purpose_of_Visit: str
+    Prescribing_Doctor_ID: int
+    Prescribing_Nurse_ID: int
     clinical_services: list[ClinicalServicesBase] = []  # Include clinical services
 
     class Config:

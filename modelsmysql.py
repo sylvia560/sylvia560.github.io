@@ -88,12 +88,14 @@ class Patient(Base):
     Chronic_Conditions = Column(String(250))
     Purpose_of_Visit = Column(String(250))
     Prescribing_Doctor_ID = Column(Integer, ForeignKey('doctors.Doctor_ID'))
+    Prescribing_Nurse_ID = Column(Integer, ForeignKey('nurses.Nurse_ID'))
     
     # Relationship to Billing (one-to-one)
     billing = relationship("Billing", back_populates="patient", uselist=False)
     
     # Relationship to Doctors (many-to-one)
     prescribing_doctor = relationship("Doctors", back_populates="patients_with_nurse")
+    Prescribing_Nurse_ID = relationship("Nurses", back_populates="patients_with_nurse")
     
     # Relationship to Clinical_services (one-to-many)
     clinical_services = relationship("Clinical_services", back_populates="patient")
@@ -110,6 +112,7 @@ class PatientUpdate(BaseModel):
     Chronic_Conditions: Optional[str] = None
     Purpose_of_Visit: Optional[str] = None
     Prescribing_Doctor_ID: Optional[int] = None
+    Prescribing_Nurse_ID: Optional[int] = None
 
     class Config:
         orm_mode = True
