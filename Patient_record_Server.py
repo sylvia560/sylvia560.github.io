@@ -220,7 +220,7 @@ async def get_doctor_details(current_user: dict = Depends(get_current_user), db:
         return {
             "Full_Name": auth_data.Full_Name,
             "Email": auth_data.Email,
-            "Department_Name_x": doctor_data.Department_Name_x,
+            "Department_Name": doctor_data.Department_Name,
         }
     else:
         revoke_token(current_user["token"])
@@ -740,10 +740,10 @@ def get_clinical_services_by_nurse(db: Session, nurse_id: int):
     response = NurseWithClinicalServices(
         Nurse_ID=nurse.Nurse_ID,
         Department_ID=nurse.Department_ID,
-        Department_Name_x=nurse.Department_Name_x,
+        Department_Name=nurse.Department_Name,
         Contact=nurse.Contact,
         Shift_Hours=nurse.Shift_Hours,
-        Department_Name_y=nurse.Department_Name_y,
+        Department_Name=nurse.Department_Name,
         clinical_services=[
             ClinicalServicesBase(
                 Patient_ID=cs.Patient_ID,

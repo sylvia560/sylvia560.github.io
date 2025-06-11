@@ -55,10 +55,10 @@ async def create_auth(auth_data: AuthBase, db: Session = Depends(get_db)):
         db_doctor = modelsmysql.Doctors(
             Doctor_ID=db_auth.User_ID,
             Department_ID=1,  # Placeholder
-            Department_Name_x="Cardiology",  # Placeholder
+            Department_Name="Cardiology",  # Placeholder
             Contact="123-456-7890",  # Placeholder
             Available_Hours="9 AM - 5 PM",  # Placeholder
-            Department_Name_y="Heart Care"  # Placeholder
+            Department_Name="Heart Care"  # Placeholder
         )
         db.add(db_doctor)
         db.commit()

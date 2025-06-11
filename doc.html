@@ -278,7 +278,7 @@
                 document.getElementById('name').textContent += ` ${authData.Full_Name}`;
                 document.getElementById('userID').textContent += ` ${userId}`;
                 document.getElementById('E-mail').textContent += ` ${authData.Email || authData.email || 'N/A'}`;
-                document.getElementById('MS').textContent += ` ${doctorData.Department_Name_x || doctorData.department_name || 'N/A'}`;
+                document.getElementById('MS').textContent += ` ${doctorData.Department_Name || doctorData.department_name || 'N/A'}`;
 
                 // Fetch patients under the doctor's care
                 const patientsRes = await fetchWithTokenRefresh(`https://sylvia560githubio-production-0677.up.railway.app/doctors/responsible/patients`);

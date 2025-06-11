@@ -40,10 +40,10 @@ load_data_from_csv()
         doctor = Doctors(
             Doctor_ID=row['Doctor_ID'],
             Department_ID=row['Department_ID'],
-            Department_Name_x=row['Department_Name_x'],
+            Department_Name=row['Department_Name'],
             Contact=row['Contact'],
             Available_Hours=row['Available_Hours'],
-            Department_Name_y=row['Department_Name_y']
+            Department_Name=row['Department_Name']
         )
         session.add(doctor)
     
@@ -53,10 +53,10 @@ load_data_from_csv()
         nurse = Nurses(
             Nurse_ID=row['Nurse_ID'],
             Department_ID=row['Department_ID'],
-            Department_Name_x=row['Department_Name_x'],
+            Department_Name=row['Department_Name'],
             Contact=row['Contact'],
             Shift_Hours=row['Shift_Hours'],
-            Department_Name_y=row['Department_Name_y']
+            Department_Name=row['Department_Name']
         )
         session.add(nurse)
     

@@ -57,7 +57,7 @@ class Nurses(Base):
     __tablename__ = "nurses"
     Nurse_ID = Column(Integer, primary_key=True, index=True)
     Department_ID=Column(Integer)
-    Medical_Specialization= Column(String(250))
+    Department_Name= Column(String(250))
     Contact= Column(String(250))
     Shift_Hours= Column(String(250))
     
