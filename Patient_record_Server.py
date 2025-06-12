@@ -529,6 +529,15 @@ async def update_dosage_instructions(
     # Return the updated record
     return db_service
 
+@Patient_record_router.get("/nurses")
+def get_nurse_data(current_user: dict = Depends(get_current_user)):
+    if current_user.role != 'Nurse':
+        raise HTTPException(status_code=403, detail="Access forbidden")
+    return {
+        "Full_Name": current_user.full_name,
+        "Email": current_user.email,
+        "Department_Name": current_user.department
+    }
 
 # GET endpoint to retrieve a patient record by User_ID along with clinical services
 @Patient_record_router.get("/patientsfetchrelated", response_model=PatientWithClinicalServices)

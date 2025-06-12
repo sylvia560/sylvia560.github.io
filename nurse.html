@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nurse Page</title>
+    <link rel="stylesheet" href="doc.css">
+    <link rel="shortcut icon" href="download.jpeg">
+</head>
+<body>
+    <h1>Welcome, Nurse</h1>
+    <br>
+    <p>This is your dashboard (Read-only).</p>
+    <br>
+    <div class="Info">
+        <p id="name">Nurse's Name:</p>
+        <p id="userID">UserID:</p>
+        <p id="E-mail">E-mail:</p>
+        <p id="Department">Department:</p>
+    </div>
+    <div class="Patients">
+        <span id="arrow1">&#9660;</span>
+        <label for="patient-search"><b>All Patients</b></label>
+        <input type="text" name="patientName" id="patientName" placeholder="Search by User ID">
+    </div>
+    <div class="patients-table" id="patientsTable" style="display: none;">
+        <table border="2">
+            <thead>
+                <tr>
+                    <th>User_ID</th>
+                    <th>Gender</th>
+                    <th>Contact</th>
+                    <th>Chronic_Conditions</th>
+                    <th>Purpose_of_Visit</th>
+                    <th>Prescribing_Doctor_ID</th>
+                    <th>Allergies</th>
+                    <th>Medication</th>
+                    <th>Dosage</th>
+                    <th>Edit</th>
+                </tr>
+            </thead>
+            <tbody id="patientsTableBody"></tbody>
+        </table>
+    </div>
+
+    <script>
+        async function fetchWithToken(url, options = {}) {
+            const token = localStorage.getItem('access_token');
+            if (!token) {
+                alert("Unauthorized. Redirecting...");
+                window.location.href = 'index.html';
+                return;
+            }
+            options.headers = {
+                ...options.headers,
+                'Authorization': `Bearer ${token}`
+            };
+            return await fetch(url, options);
+        }
+
+        function handleEditPatientReadOnly() {
+            alert("Access Denied! It is read-only");
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const token = localStorage.getItem('access_token');
+            const userId = localStorage.getItem('user_id');
+            const role = localStorage.getItem('role');
+
+            if (!token || !userId || role !== 'Nurse') {
+                alert("Unauthorized access.");
+                window.location.href = 'index.html';
+                return;
+            }
+
+            try {
+                const nurseRes = await fetchWithToken(`https://sylvia560githubio-production-0677.up.railway.app/nurses`);
+                if (!nurseRes.ok) throw new Error('Failed to fetch nurse info');
+                const nurseData = await nurseRes.json();
+
+                document.getElementById('name').textContent += ` ${nurseData.Full_Name}`;
+                document.getElementById('userID').textContent += ` ${userId}`;
+                document.getElementById('E-mail').textContent += ` ${nurseData.Email || 'N/A'}`;
+                document.getElementById('Department').textContent += ` ${nurseData.Department_Name || 'N/A'}`;
+
+                const patientsRes = await fetchWithToken(`https://sylvia560githubio-production-0677.up.railway.app/doctors/responsible/patients`);
+                if (!patientsRes.ok) throw new Error('Failed to fetch patients');
+                const patientsData = await patientsRes.json();
+
+                const tableBody = document.getElementById('patientsTableBody');
+                patientsData.forEach(patient => {
+                    const row = tableBody.insertRow();
+                    row.innerHTML = `
+                        <td>${patient.User_ID}</td>
+                        <td>${patient.Gender}</td>
+                        <td>${patient.Contact}</td>
+                        <td>${patient.Chronic_Conditions}</td>
+                        <td>${patient.Purpose_of_Visit}</td>
+                        <td>${patient.Prescribing_Doctor_ID}</td>
+                        <td>${patient.Allergies}</td>
+                        <td>${patient.clinical_services.map(cs => cs.Medication_Name).join(', ')}</td>
+                        <td>${patient.clinical_services.map(cs => cs.Dosage_Instructions).join(', ')}</td>
+                        <td><button onclick="handleEditPatientReadOnly()">Edit</button></td>
+                    `;
+                });
+
+                document.getElementById('arrow1').addEventListener('click', () => {
+                    const table = document.getElementById('patientsTable');
+                    table.style.display = table.style.display === 'none' ? 'block' : 'none';
+                });
+
+                document.getElementById('patientName').addEventListener('input', (e) => {
+                    const term = e.target.value.toLowerCase();
+                    Array.from(tableBody.rows).forEach(row => {
+                        const userID = row.cells[0].textContent.toLowerCase();
+                        row.style.display = userID.includes(term) ? '' : 'none';
+                    });
+                });
+
+            } catch (error) {
+                console.error("Dashboard load error:", error);
+                alert("Could not load nurse dashboard.");
+            }
+        });
+    </script>
+</body>
+</html>
