@@ -42,83 +42,68 @@
 </div>
 
 <script>
-    document.addEventListener('DOMContentLoaded', () => {
-        const doctorId = localStorage.getItem('user_id');
-        if (doctorId) {
-            document.getElementById('prescribingDoctorID').value = doctorId;
-        } else {
-            console.error('Doctor ID not found in localStorage.');
-        }
-    });
-    
     async function submitPatient() {
-    const doctorId = localStorage.getItem('user_id');
-    const token = localStorage.getItem('access_token');
-    const fallbackNurseID = 678623; // ← Dummy fallback nurse ID
-
-    if (!token || !doctorId) {
-        alert("Session expired or invalid doctor. Please log in again.");
-        window.location.href = "index.html";
-        return;
-    }
-    const nurseInput = document.getElementById('prescribingNurseID');
-let nurseID = fallbackNurseID;
-
-if (nurseInput && nurseInput.value.trim() !== '') {
-    nurseID = parseInt(nurseInput.value, 10);
-}
-
-const formData = {
-    User_ID: document.getElementById('userID').value,
-    Patient_ID_Clinical: document.getElementById('patientClinicalID').value,
-    Patient_ID_Billing: document.getElementById('patientBillingID').value,
-    Gender: document.getElementById('patientGender').value,
-    Contact: document.getElementById('patientContact').value,
-    Allergies: document.getElementById('allergies').value,
-    Chronic_Conditions: document.getElementById('chronicConditions').value,
-    Purpose_of_Visit: document.getElementById('purposeOfVisit').value,
-    Prescribing_Doctor_ID: parseInt(doctorId),
-    Prescribing_Nurse_ID: nurseID
-};
-
-
-    try {
-        const response = await fetch('https://sylvia560githubio-production-0677.up.railway.app/patients', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify(formData),
-        });
-
-        if (response.ok) {
-            alert('Patient added successfully!');
-            document.getElementById('patientForm').reset();
-            document.getElementById('prescribingDoctorID').value = doctorId;
-        } else {
-            const errorData = await response.json();
-            console.error("Error response:", errorData);
-                if (errorData.detail) {
-        if (Array.isArray(errorData.detail)) {
-            alert("Error: " + errorData.detail.map(e => e.msg).join(", "));
-        } else if (typeof errorData.detail === 'object') {
-            alert("Error: " + JSON.stringify(errorData.detail));
-        } else {
-            alert("Error: " + errorData.detail);
+        const doctorId = localStorage.getItem('user_id');
+        const token = localStorage.getItem('access_token');
+        const fallbackNurseID = 678623;
+    
+        if (!token || !doctorId) {
+            alert("Session expired or invalid doctor. Please log in again.");
+            window.location.href = "index.html";
+            return;
         }
-    } else {
-        alert("Unexpected error: " + JSON.stringify(errorData));
-    }
-    console.error("Full error response:", errorData);
-
+    
+        // Grab and validate form values
+        const nurseInput = document.getElementById('prescribingNurseID');
+        let nurseID = fallbackNurseID;
+    
+        if (nurseInput && nurseInput.value.trim() !== '') {
+            nurseID = parseInt(nurseInput.value.trim(), 10);
+            if (isNaN(nurseID)) {
+                alert("Prescribing Nurse ID must be a number.");
+                return;
+            }
         }
-    } catch (error) {
-        console.error('Error submitting patient:', error);
-        alert('An error occurred while submitting the form.');
+    
+        const formData = {
+            User_ID: parseInt(document.getElementById('userID').value),
+            Patient_ID_Clinical: document.getElementById('patientClinicalID').value,
+            Patient_ID_Billing: document.getElementById('patientBillingID').value,
+            Gender: document.getElementById('patientGender').value,
+            Contact: document.getElementById('patientContact').value,
+            Allergies: document.getElementById('allergies').value,
+            Chronic_Conditions: document.getElementById('chronicConditions').value,
+            Purpose_of_Visit: document.getElementById('purposeOfVisit').value,
+            Prescribing_Doctor_ID: parseInt(doctorId),
+            Prescribing_Nurse_ID: nurseID
+        };
+    
+        try {
+            const response = await fetch('https://sylvia560githubio-production-0677.up.railway.app/patients', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(formData),
+            });
+    
+            const result = await response.json();
+    
+            if (response.ok) {
+                alert('Patient added successfully!');
+                document.getElementById('patientForm').reset();
+                document.getElementById('prescribingDoctorID').value = doctorId;
+            } else {
+                console.error("Error response:", result);
+                alert("Error: " + JSON.stringify(result.detail || result));
+            }
+        } catch (error) {
+            console.error('Error submitting patient:', error);
+            alert('An error occurred while submitting the form.');
+        }
     }
-}
-
     </script>
+    
 </body>
 </html>

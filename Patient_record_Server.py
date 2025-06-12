@@ -104,7 +104,7 @@ class PatientBase(BaseModel):
     Chronic_Conditions: str
     Purpose_of_Visit: str
     Prescribing_Doctor_ID: int
-    Prescribing_Nurse_ID: int
+    Prescribing_Nurse_ID: Optional[int] = None
 
     class Config:
         orm_mode = True
