@@ -743,7 +743,6 @@ def get_clinical_services_by_nurse(db: Session, nurse_id: int):
         Department_Name=nurse.Department_Name,
         Contact=nurse.Contact,
         Shift_Hours=nurse.Shift_Hours,
-        Department_Name=nurse.Department_Name,
         clinical_services=[
             ClinicalServicesBase(
                 Patient_ID=cs.Patient_ID,
