@@ -27,7 +27,8 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 import os,base64
 import Identity_Management,Patient_record_Server,Session_Management
-
+from fastapi import Depends
+from sqlalchemy.orm import Session
 
 app= FastAPI()
 security = HTTPBearer()

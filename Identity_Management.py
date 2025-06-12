@@ -58,7 +58,6 @@ async def create_auth(auth_data: AuthBase, db: Session = Depends(get_db)):
             Department_Name="Cardiology",  # Placeholder
             Contact="123-456-7890",  # Placeholder
             Available_Hours="9 AM - 5 PM",  # Placeholder
-            Department_Name="Heart Care"  # Placeholder
         )
         db.add(db_doctor)
         db.commit()
