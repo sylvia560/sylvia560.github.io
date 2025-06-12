@@ -75,71 +75,93 @@
             <button type="button" onclick="window.location.href='doc.html'">Cancel</button>
         </div>
     </form>
-
-    <script>
-        document.addEventListener('DOMContentLoaded', async () => {
-            const urlParams = new URLSearchParams(window.location.search);
-            const userId = urlParams.get('patient_id');
-            if (!userId) {
-                alert("Invalid patient ID");
-                window.location.href = 'doc.html';
+<script>
+    document.addEventListener('DOMContentLoaded', async () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const userId = urlParams.get('patient_id');
+        if (!userId) {
+            alert("Invalid patient ID");
+            window.location.href = 'doc.html';
+            return;
+        }
+    
+        try {
+            // First check token and refresh if needed
+            const token = localStorage.getItem('access_token');
+            if (!token) {
+                alert("Session expired. Please login again.");
+                window.location.href = 'index.html';
                 return;
             }
     
-            try {
-                const response = await fetch(`https://sylvia560githubio-production-0677.up.railway.app/patients?patient_id=${userId}`);
-                if (!response.ok) throw new Error("Failed to fetch patient data");
-                const patient = await response.json();
-                document.getElementById('userID').value = patient.User_ID;
-                document.getElementById('patientIDClinical').value = patient.Patient_ID_Clinical;
-                document.getElementById('patientIDBilling').value = patient.Patient_ID_Billing;
-                document.getElementById('gender').value = patient.Gender;
-                document.getElementById('contact').value = patient.Contact;
-                document.getElementById('chronicConditions').value = patient.Chronic_Conditions;
-                document.getElementById('purposeOfVisit').value = patient.Purpose_of_Visit;
-                document.getElementById('prescribingDoctorID').value = patient.Prescribing_Doctor_ID;
-                document.getElementById('allergies').value = patient.Allergies;
-            } catch (error) {
-                console.error(error);
-                alert("Error loading patient data");
-            }
-    
-            // HANDLE FORM SUBMISSION FOR UPDATING PATIENT
-            document.getElementById('editPatientForm').addEventListener('submit', async (event) => {
-                event.preventDefault();
-    
-                const patientData = {
-                    User_ID: userId,
-                    Patient_ID_Clinical: document.getElementById('patientIDClinical').value,
-                    Patient_ID_Billing: document.getElementById('patientIDBilling').value,
-                    Gender: document.getElementById('gender').value,
-                    Contact: document.getElementById('contact').value,
-                    Chronic_Conditions: document.getElementById('chronicConditions').value,
-                    Purpose_of_Visit: document.getElementById('purposeOfVisit').value,
-                    Prescribing_Doctor_ID: document.getElementById('prescribingDoctorID').value, // <-- fixed
-                    Allergies: document.getElementById('allergies').value
-                };
-
-    
-                try {
-                    const updateResponse = await fetch(`https://sylvia560githubio-production-0677.up.railway.app/patients?patient_id=${userId}`, {
-                        method: 'PUT',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify(patientData),
-                    });
-    
-                    if (!updateResponse.ok) throw new Error("Failed to update patient data");
-    
-                    alert("Patient information updated successfully");
-                    window.location.href = 'doc.html';
-                } catch (error) {
-                    console.error(error);
-                    alert("Error updating patient data");
+            // Fetch patient data with authorization
+            const response = await fetch(`https://sylvia560githubio-production-0677.up.railway.app/patients/${userId}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
                 }
             });
+            
+            if (!response.ok) throw new Error("Failed to fetch patient data");
+            const patient = await response.json();
+            
+            // Populate form fields
+            document.getElementById('userID').value = patient.User_ID;
+            document.getElementById('patientIDClinical').value = patient.Patient_ID_Clinical;
+            document.getElementById('patientIDBilling').value = patient.Patient_ID_Billing;
+            document.getElementById('gender').value = patient.Gender;
+            document.getElementById('contact').value = patient.Contact;
+            document.getElementById('chronicConditions').value = patient.Chronic_Conditions;
+            document.getElementById('purposeOfVisit').value = patient.Purpose_of_Visit;
+            document.getElementById('prescribingDoctorID').value = patient.Prescribing_Doctor_ID;
+            document.getElementById('allergies').value = patient.Allergies;
+        } catch (error) {
+            console.error(error);
+            alert("Error loading patient data: " + error.message);
+        }
+    
+        // Handle form submission
+        document.getElementById('editPatientForm').addEventListener('submit', async (event) => {
+            event.preventDefault();
+    
+            const patientData = {
+                Patient_ID_Clinical: document.getElementById('patientIDClinical').value,
+                Patient_ID_Billing: document.getElementById('patientIDBilling').value,
+                Contact: document.getElementById('contact').value,
+                Chronic_Conditions: document.getElementById('chronicConditions').value,
+                Purpose_of_Visit: document.getElementById('purposeOfVisit').value,
+                Allergies: document.getElementById('allergies').value
+            };
+    
+            try {
+                const token = localStorage.getItem('access_token');
+                if (!token) {
+                    alert("Session expired. Please login again.");
+                    window.location.href = 'index.html';
+                    return;
+                }
+    
+                const updateResponse = await fetch(`https://sylvia560githubio-production-0677.up.railway.app/patients/${userId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(patientData)
+                });
+    
+                if (!updateResponse.ok) {
+                    const errorData = await updateResponse.json();
+                    throw new Error(errorData.detail || "Failed to update patient data");
+                }
+    
+                alert("Patient information updated successfully");
+                window.location.href = 'doc.html';
+            } catch (error) {
+                console.error(error);
+                alert("Error updating patient data: " + error.message);
+            }
         });
+    });
     </script>
     
 </body>

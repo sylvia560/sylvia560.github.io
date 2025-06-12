@@ -493,14 +493,23 @@ async def delete_patient(
         
         
 # GET endpoint to retrieve a patient record by Usert_ID
-# GET endpoint to retrieve a patient record by Usert_ID
-@Patient_record_router.get("/patients", response_model=PatientBase)
-async def get_patient(patient_id: str, db: Session = Depends(get_db)):
+@Patient_record_router.get("/patients/{patient_id}", response_model=PatientBase)
+async def get_patient(
+    patient_id: int,
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    Role = current_user["role"]
+    if Role not in ["Doctor", "Nurse"]:  # Allow both doctors and nurses to view
+        revoke_token(current_user["token"])
+        raise HTTPException(status_code=403, detail="RBAC unauthorized!")
+    
     db_patient = db.query(modelsmysql.Patient).filter(modelsmysql.Patient.User_ID == patient_id).first()
     db_clinical_services = db.query(modelsmysql.Clinical_services).filter(modelsmysql.Clinical_services.Patient_ID == patient_id).all()
+    
     if db_patient is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Patient record not found")
-    # Manually return a clean dict or Pydantic model
+    
     return {
         "User_ID": db_patient.User_ID,
         "Patient_ID_Clinical": db_patient.Patient_ID_Clinical,
@@ -526,23 +535,50 @@ async def get_patient(patient_id: str, db: Session = Depends(get_db)):
     }
 
 
-
-@Patient_record_router.put("/patients", response_model=PatientBase)
+@Patient_record_router.put("/patients/{patient_id}", response_model=PatientBase)
 async def update_patient(
+    patient_id: int,
     update_data: PatientUpdate,
-    patient_id: str = Query(...),
+    current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
+    Role = current_user["role"]
+    if Role != "Doctor":
+        revoke_token(current_user["token"])
+        raise HTTPException(status_code=403, detail="RBAC unauthorized!")
+
     db_patient = db.query(modelsmysql.Patient).filter(modelsmysql.Patient.User_ID == patient_id).first()
     if db_patient is None:
         raise HTTPException(status_code=404, detail="Patient not found")
+
+    # Encrypt sensitive fields before updating
+    if update_data.Contact is not None:
+        update_data.Contact = encrypt_data(update_data.Contact)
+    if update_data.Allergies is not None:
+        update_data.Allergies = encrypt_data(update_data.Allergies)
+    if update_data.Chronic_Conditions is not None:
+        update_data.Chronic_Conditions = encrypt_data(update_data.Chronic_Conditions)
+    if update_data.Purpose_of_Visit is not None:
+        update_data.Purpose_of_Visit = encrypt_data(update_data.Purpose_of_Visit)
 
     for field, value in update_data.dict(exclude_unset=True).items():
         setattr(db_patient, field, value)
 
     db.commit()
     db.refresh(db_patient)
-    return db_patient
+    
+    # Return decrypted data
+    return {
+        "User_ID": db_patient.User_ID,
+        "Patient_ID_Clinical": db_patient.Patient_ID_Clinical,
+        "Patient_ID_Billing": db_patient.Patient_ID_Billing,
+        "Gender": db_patient.Gender,
+        "Contact": decrypt_data(db_patient.Contact),
+        "Allergies": decrypt_data(db_patient.Allergies),
+        "Chronic_Conditions": decrypt_data(db_patient.Chronic_Conditions),
+        "Purpose_of_Visit": decrypt_data(db_patient.Purpose_of_Visit),
+        "Prescribing_Doctor_ID": db_patient.Prescribing_Doctor_ID,
+    }
 
 
 # @Patient_record_router.put("/patients", response_model=PatientBase)
