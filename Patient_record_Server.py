@@ -720,6 +720,7 @@ def get_patient_with_billing(db: Session, user_id: int):
         Chronic_Conditions=decrypt_data(patient.Chronic_Conditions),
         Purpose_of_Visit=patient.Purpose_of_Visit,
         Prescribing_Doctor_ID=patient.Prescribing_Doctor_ID,
+        Prescribing_Nurse_ID=patient.Prescribing_Nurse_ID,
         billing=BillingBase(
             Patient_ID=billing_info.Patient_ID if billing_info else None,
             Status=billing_info.Status if billing_info else None,
