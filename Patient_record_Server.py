@@ -252,6 +252,67 @@ async def get_nurse(current_user: dict = Depends(get_current_user), db: Session 
     else:
         revoke_token(current_user["token"])
         raise HTTPException(status_code=403, detail="RBAC unauthorized !")
+    
+# Add these functions to Patient_record_Server.py
+
+# Get function to retrieve all patients for a specific nurse
+def get_patients_by_nurse(db: Session, nurse_id: int):
+    # First determine the actual Nurse_ID
+    nurse = db.query(Nurses).filter(Nurses.Nurse_ID == nurse_id).first()
+    
+    if not nurse:
+        raise HTTPException(status_code=404, detail="Nurse not found")
+    
+    # Get patients for this nurse
+    patients = db.query(Patient).filter(Patient.Prescribing_Nurse_ID == nurse.Nurse_ID).all()
+    
+    if not patients:
+        return []
+    
+    # Build response
+    response = []
+    for patient in patients:
+        clinical_services = db.query(Clinical_services).filter(
+            Clinical_services.Patient_ID == patient.User_ID
+        ).all()
+        
+        response.append(PatientForNurse(
+            User_ID=patient.User_ID,
+            Patient_ID_Clinical=patient.Patient_ID_Clinical,
+            Patient_ID_Billing=patient.Patient_ID_Billing,
+            Gender=patient.Gender,
+            Contact=decrypt_data(patient.Contact),
+            Allergies=decrypt_data(patient.Allergies),
+            Chronic_Conditions=decrypt_data(patient.Chronic_Conditions),
+            Purpose_of_Visit=decrypt_data(patient.Purpose_of_Visit),
+            Prescribing_Doctor_ID=patient.Prescribing_Doctor_ID,
+            Prescribing_Nurse_ID=patient.Prescribing_Nurse_ID,
+            clinical_services=[
+                ClinicalServicesBase(
+                    Patient_ID=cs.Patient_ID,
+                    Department_ID=cs.Department_ID,
+                    Medication_Name=decrypt_data(cs.Medication_Name),
+                    Dosage_Instructions=decrypt_data(cs.Dosage_Instructions),
+                    Responsible_Doctor_ID=cs.Responsible_Doctor_ID,
+                    Treatment_Details=decrypt_data(cs.Treatment_Details),
+                    Department_Name=cs.Department_Name,
+                )
+                for cs in clinical_services
+            ]
+        ))
+    
+    return response
+
+# FastAPI endpoint to expose the get function
+@Patient_record_router.get("/nurses/responsible/patients", response_model=list[PatientForNurse])
+def read_patients_by_nurse(current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
+    nurse_id = current_user["user_id"]
+    Role = current_user["role"]
+    if(Role == "Nurse"):
+        return get_patients_by_nurse(db, nurse_id)
+    else:
+        revoke_token(current_user["token"])
+        raise HTTPException(status_code=403, detail="RBAC unauthorized!")
 
 # POST endpoint to create a new clinical service record
 @Patient_record_router.post("/clinical-services", status_code=status.HTTP_201_CREATED)
@@ -529,15 +590,6 @@ async def update_dosage_instructions(
     # Return the updated record
     return db_service
 
-@Patient_record_router.get("/nurses")
-def get_nurse_data(current_user: dict = Depends(get_current_user)):
-    if current_user.role != 'Nurse':
-        raise HTTPException(status_code=403, detail="Access forbidden")
-    return {
-        "Full_Name": current_user.full_name,
-        "Email": current_user.email,
-        "Department_Name": current_user.department
-    }
 
 # GET endpoint to retrieve a patient record by User_ID along with clinical services
 @Patient_record_router.get("/patientsfetchrelated", response_model=PatientWithClinicalServices)
