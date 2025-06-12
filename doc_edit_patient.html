@@ -129,13 +129,21 @@
                 event.preventDefault();
 
                 const patientData = {
-                    Patient_ID_Clinical: document.getElementById('patientIDClinical').value,
-                    Patient_ID_Billing: document.getElementById('patientIDBilling').value,
-                    Contact: document.getElementById('contact').value,
-                    Chronic_Conditions: document.getElementById('chronicConditions').value,
-                    Purpose_of_Visit: document.getElementById('purposeOfVisit').value,
-                    Allergies: document.getElementById('allergies').value
+                    Patient_ID_Clinical: parseInt(document.getElementById('patientIDClinical').value) || null,
+                    Patient_ID_Billing: parseInt(document.getElementById('patientIDBilling').value) || null,
+                    Contact: document.getElementById('contact').value || null,
+                    Chronic_Conditions: document.getElementById('chronicConditions').value || null,
+                    Purpose_of_Visit: document.getElementById('purposeOfVisit').value || null,
+                    Allergies: document.getElementById('allergies').value || null
                 };
+                const clinicalID = parseInt(document.getElementById('patientIDClinical').value);
+const billingID = parseInt(document.getElementById('patientIDBilling').value);
+
+if (isNaN(clinicalID) || isNaN(billingID)) {
+    alert("Patient Clinical and Billing IDs must be valid numbers.");
+    return;
+}
+
 
                 try {
                     const token = localStorage.getItem('access_token');
