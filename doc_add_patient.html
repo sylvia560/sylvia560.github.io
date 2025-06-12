@@ -61,21 +61,26 @@
         window.location.href = "index.html";
         return;
     }
-    console.log("prescribingNurseID element:", document.getElementById('prescribingNurseID'));
+    const nurseInput = document.getElementById('prescribingNurseID');
+let nurseID = fallbackNurseID;
 
+if (nurseInput && nurseInput.value.trim() !== '') {
+    nurseID = parseInt(nurseInput.value, 10);
+}
 
-    const formData = {
-        User_ID: document.getElementById('userID').value,
-        Patient_ID_Clinical: document.getElementById('patientClinicalID').value,
-        Patient_ID_Billing: document.getElementById('patientBillingID').value,
-        Gender: document.getElementById('patientGender').value,
-        Contact: document.getElementById('patientContact').value,
-        Allergies: document.getElementById('allergies').value,
-        Chronic_Conditions: document.getElementById('chronicConditions').value,
-        Purpose_of_Visit: document.getElementById('purposeOfVisit').value,
-        Prescribing_Doctor_ID: doctorId,
-        Prescribing_Nurse_ID: document.getElementById('prescribingNurseID').value || fallbackNurseID
-    };
+const formData = {
+    User_ID: document.getElementById('userID').value,
+    Patient_ID_Clinical: document.getElementById('patientClinicalID').value,
+    Patient_ID_Billing: document.getElementById('patientBillingID').value,
+    Gender: document.getElementById('patientGender').value,
+    Contact: document.getElementById('patientContact').value,
+    Allergies: document.getElementById('allergies').value,
+    Chronic_Conditions: document.getElementById('chronicConditions').value,
+    Purpose_of_Visit: document.getElementById('purposeOfVisit').value,
+    Prescribing_Doctor_ID: parseInt(doctorId),
+    Prescribing_Nurse_ID: nurseID
+};
+
 
     try {
         const response = await fetch('https://sylvia560githubio-production-0677.up.railway.app/patients', {
