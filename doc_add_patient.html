@@ -31,6 +31,8 @@
         <input type="text" name="purposeOfVisit" id="purposeOfVisit" placeholder="Purpose of Visit"><br>
         <label for="prescribingDoctorID"><b>Prescribing Doctor ID :</b></label>
         <input type="text" name="prescribingDoctorID" id="prescribingDoctorID" placeholder="Prescribing Doctor ID" readonly><br>
+        <label for="prescribingNurseID"><b>Prescribing Nurse ID :</b></label>
+        <input type="text" name="prescribingNurseID" id="prescribingNurseID" placeholder="Prescribing Nurse ID" readonly><br>
         <label for="allergies"><b>Allergies :</b></label>
         <input type="text" name="allergies" id="allergies" placeholder="Allergies"><br>
         <button type="button" class="btn" onclick="submitPatient()">Add</button>
@@ -59,23 +61,37 @@
             Allergies: document.getElementById('allergies').value,
             Chronic_Conditions: document.getElementById('chronicConditions').value,
             Purpose_of_Visit: document.getElementById('purposeOfVisit').value,
-            Prescribing_Doctor_ID: doctorId,  // use the constant doctorId here
+            Prescribing_Doctor_ID: doctorId,
+            Prescribing_Nurse_ID: document.getElementById('prescribingNurseID').value
         };
+
     
         try {
+            const token = localStorage.getItem('access_token');
+            if (!token) {
+                alert("Session expired. Please log in again.");
+                window.location.href = "index.html";
+                return;
+            }
+
             const response = await fetch('https://sylvia560githubio-production-0677.up.railway.app/patients', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
                 body: JSON.stringify(formData),
             });
-    
+
             if (response.ok) {
                 alert('Patient added successfully!');
                 document.getElementById('patientForm').reset();
                 document.getElementById('prescribingDoctorID').value = doctorId; // refill the doctor ID after reset
             } else {
                 const errorData = await response.json();
-                alert(`Error: ${errorData.detail}`);
+                console.error("Server error:", errorData);
+                alert("Error: " + (errorData.detail || JSON.stringify(errorData)));
+
             }
         } catch (error) {
             console.error('Error:', error);
