@@ -291,7 +291,7 @@
 
             try {
                 // Fetch patient details
-                const patientRes = await fetchWithTokenRefresh(`https://sylvia560githubio-production-0677.up.railway.app/patients?patient_id=${userId}`);
+                const patientRes = await fetchWithTokenRefresh(`https://sylvia560githubio-production-0677.up.railway.app/patients?patients=${userId}`);
                 if (!patientRes.ok) {
                     const errorResponse = await patientRes.json();
                     console.error('Failed to fetch patient details:', errorResponse);
@@ -305,7 +305,7 @@
                 document.getElementById('chronic-conditions').textContent = patientData.Chronic_Conditions || 'N/A';
 
                 // Fetch clinical services for the patient
-                const clinicalServicesRes = await fetchWithTokenRefresh(`https://sylvia560githubio-production-0677.up.railway.app/clinical-services?patient_id=${userId}`);
+                const clinicalServicesRes = await fetchWithTokenRefresh(`https://sylvia560githubio-production-0677.up.railway.app/clinical-services?patients=${userId}`);
                 if (!clinicalServicesRes.ok) {
                     const errorResponse = await clinicalServicesRes.json();
                     console.error('Failed to fetch clinical services:', errorResponse);
@@ -333,7 +333,7 @@
                 }
 
                 // Fetch billing information for the patient
-                const billingRes = await fetchWithTokenRefresh(`https://sylvia560githubio-production-0677.up.railway.app/billing?patient_id=${userId}`);
+                const billingRes = await fetchWithTokenRefresh(`https://sylvia560githubio-production-0677.up.railway.app/billing?patients=${userId}`);
                 if (!billingRes.ok) {
                     const errorResponse = await billingRes.json();
                     console.error('Failed to fetch billing information:', errorResponse);
