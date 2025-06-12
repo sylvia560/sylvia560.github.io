@@ -31,8 +31,6 @@
         <input type="text" name="purposeOfVisit" id="purposeOfVisit" placeholder="Purpose of Visit"><br>
         <label for="prescribingDoctorID"><b>Prescribing Doctor ID :</b></label>
         <input type="text" name="prescribingDoctorID" id="prescribingDoctorID" placeholder="Prescribing Doctor ID" readonly><br>
-        <label for="prescribingNurseID"><b>Prescribing Nurse ID :</b></label>
-        <input type="text" name="prescribingNurseID" id="prescribingNurseID" placeholder="Prescribing Nurse ID" readonly><br>
         <label for="allergies"><b>Allergies :</b></label>
         <input type="text" name="allergies" id="allergies" placeholder="Allergies"><br>
         <button type="button" class="btn" onclick="submitPatient()">Add</button>
@@ -90,11 +88,19 @@
         } else {
             const errorData = await response.json();
             console.error("Error response:", errorData);
-            if (errorData.detail && Array.isArray(errorData.detail)) {
-                alert("Error: " + errorData.detail.map(e => e.msg).join(", "));
-            } else {
-                alert("Error: " + (errorData.detail || JSON.stringify(errorData)));
-            }
+                if (errorData.detail) {
+        if (Array.isArray(errorData.detail)) {
+            alert("Error: " + errorData.detail.map(e => e.msg).join(", "));
+        } else if (typeof errorData.detail === 'object') {
+            alert("Error: " + JSON.stringify(errorData.detail));
+        } else {
+            alert("Error: " + errorData.detail);
+        }
+    } else {
+        alert("Unexpected error: " + JSON.stringify(errorData));
+    }
+    console.error("Full error response:", errorData);
+
         }
     } catch (error) {
         console.error('Error submitting patient:', error);
