@@ -520,6 +520,7 @@ async def get_patient(
         "Chronic_Conditions": decrypt_data(db_patient.Chronic_Conditions),
         "Purpose_of_Visit": decrypt_data(db_patient.Purpose_of_Visit),
         "Prescribing_Doctor_ID": db_patient.Prescribing_Doctor_ID,
+        "Prescribing_Nurse_ID": db_patient.Prescribing_Nurse_ID,
         "clinical_services": [
             {
                 "Patient_ID": cs.Patient_ID,
