@@ -256,7 +256,7 @@
                 const clinicalServicesTableBody = document.getElementById('clinical-services-body');
                 clinicalServicesTableBody.innerHTML = '';
     
-                if (patientData.clinical_services?.length) {
+                try {
                     patientData.clinical_services.forEach(service => {
                         const row = clinicalServicesTableBody.insertRow();
                         row.innerHTML = `
@@ -265,10 +265,12 @@
                             <td>${service.Responsible_Doctor_ID || 'N/A'}</td>
                         `;
                     });
-                } else {
+                } catch (error) {
                     const row = clinicalServicesTableBody.insertRow();
                     row.innerHTML = `<td colspan="3">No clinical services found.</td>`;
+                    console.error("Error rendering clinical services:", error);
                 }
+
     
                 const billingRes = await fetchWithTokenRefresh(`https://sylvia560githubio-production-0677.up.railway.app/billing?patients=${userId}`);
                 if (!billingRes.ok) {
