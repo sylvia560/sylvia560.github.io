@@ -328,27 +328,36 @@ async def create_clinical_service(service: ClinicalServicesBase, db: Session = D
 
 
 
+from typing import List
 
-# GET endpoint to retrieve a clinical service record by Patient_ID
-@Patient_record_router.get("/clinical-services", response_model=ClinicalServicesBase)
+@Patient_record_router.get("/clinical-services", response_model=List[ClinicalServicesBase])
 async def get_clinical_service(current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
-    patient_id= current_user["user_id"]
-    Role=current_user["role"]
-    if(Role=="Client"):
-        db_service = db.query(modelsmysql.Clinical_services).filter(modelsmysql.Clinical_services.Patient_ID == patient_id).first()
-        if db_service is None:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Clinical service record not found")
-        return {
-            "Patient_ID": db_service.Patient_ID,
-            "Department_ID": db_service.Department_ID,
-            "Medication_Name": decrypt_data(db_service.Medication_Name),
-            "Dosage_Instructions": decrypt_data(db_service.Dosage_Instructions),
-            "Responsible_Doctor_ID": db_service.Responsible_Doctor_ID,
-            "Treatment_Details": decrypt_data(db_service.Treatment_Details),
-            "Department_Name": db_service.Department_Name}
-    else:
-        revoke_token(current_user["token"])
-        raise HTTPException(status_code=403, detail="RBAC unauthorized !")
+    patient_id = current_user["user_id"]
+    Role = current_user["role"]
+
+    if Role == "Client":
+        db_services = db.query(modelsmysql.Clinical_services).filter(
+            modelsmysql.Clinical_services.Patient_ID == patient_id
+        ).all()
+
+        if not db_services:
+            raise HTTPException(status_code=404, detail="No clinical service records found")
+
+        return [
+            {
+                "Patient_ID": s.Patient_ID,
+                "Department_ID": s.Department_ID,
+                "Medication_Name": decrypt_data(s.Medication_Name),
+                "Dosage_Instructions": decrypt_data(s.Dosage_Instructions),
+                "Responsible_Doctor_ID": s.Responsible_Doctor_ID,
+                "Treatment_Details": decrypt_data(s.Treatment_Details),
+                "Department_Name": s.Department_Name,
+            }
+            for s in db_services
+        ]
+
+    revoke_token(current_user["token"])
+    raise HTTPException(status_code=403, detail="RBAC unauthorized!")
 
 
 
