@@ -256,7 +256,7 @@
                 const clinicalServicesTableBody = document.getElementById('clinical-services-body');
                 clinicalServicesTableBody.innerHTML = '';
     
-                if (patientData.clinical_services?.length > 0) {
+                if (patientData.clinical_services?.length) {
                     patientData.clinical_services.forEach(service => {
                         const row = clinicalServicesTableBody.insertRow();
                         row.innerHTML = `
