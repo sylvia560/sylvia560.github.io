@@ -73,30 +73,24 @@
 
     <!-- JavaScript to Fetch Data from FastAPI Backend -->
     <script>
-        // Constants for token expiration times (in minutes)
-        const ACCESS_TOKEN_EXPIRE_MINUTES = 1; // Access token expires in 1 minute
-        const REFRESH_TOKEN_EXPIRE_MINUTES = 2; // Refresh token expires in 2 minutes
-
-        // Function to get the user's location using navigator.geolocation
+        const ACCESS_TOKEN_EXPIRE_MINUTES = 1;
+        const REFRESH_TOKEN_EXPIRE_MINUTES = 2;
+    
         function getLocation() {
             return new Promise((resolve, reject) => {
                 if (navigator.geolocation) {
-                    navigator.geolocation.getCurrentPosition(
-                        (position) => resolve(position),
-                        (error) => reject(error)
-                    );
+                    navigator.geolocation.getCurrentPosition(resolve, reject);
                 } else {
-                    reject(new Error("Geolocation is not supported by this browser."));
+                    reject(new Error("Geolocation is not supported."));
                 }
             });
         }
-
-        // Function to get the user's location using IP Geolocation as a fallback
+    
         async function getIPLocation() {
             try {
                 const response = await fetch('https://ipapi.co/json/');
                 const data = await response.json();
-                console.log('IP Geolocation data:', data); // Log the IP geolocation data
+                console.log('IP Geolocation:', data);
                 return {
                     coords: {
                         latitude: data.latitude,
@@ -108,263 +102,204 @@
                 return null;
             }
         }
-
-        // Function to capture OS and Browser info accurately
+    
         function getOS() {
-            let OSName = "Unknown OS";
-            if (navigator.appVersion.indexOf("Win") != -1) OSName = "Windows";
-            if (navigator.appVersion.indexOf("Mac") != -1) OSName = "MacOS";
-            if (navigator.appVersion.indexOf("X11") != -1) OSName = "UNIX";
-            if (navigator.appVersion.indexOf("Linux") != -1) OSName = "Linux";
-            return OSName;
+            const { appVersion } = navigator;
+            if (appVersion.indexOf("Win") !== -1) return "Windows";
+            if (appVersion.indexOf("Mac") !== -1) return "MacOS";
+            if (appVersion.indexOf("X11") !== -1) return "UNIX";
+            if (appVersion.indexOf("Linux") !== -1) return "Linux";
+            return "Unknown OS";
         }
-
+    
         function getBrowser() {
-            let userAgent = navigator.userAgent;
-            let browserName;
-
-            if (userAgent.match(/edg/i)) {
-                browserName = "Edge";
-            } else if (userAgent.match(/opr\//i)) {
-                browserName = "Opera";
-            } else if (userAgent.match(/chrome|chromium|crios/i)) {
-                browserName = "Chrome";
-            } else if (userAgent.match(/firefox|fxios/i)) {
-                browserName = "Firefox";
-            } else if (userAgent.match(/safari/i) && !userAgent.match(/crios|chromium|edg|opr|fxios/i)) {
-                browserName = "Safari";
-            } else {
-                browserName = "No browser detection";
-            }
-
-            return browserName;
+            const ua = navigator.userAgent;
+            if (/edg/i.test(ua)) return "Edge";
+            if (/opr\//i.test(ua)) return "Opera";
+            if (/chrome|chromium|crios/i.test(ua)) return "Chrome";
+            if (/firefox|fxios/i.test(ua)) return "Firefox";
+            if (/safari/i.test(ua) && !/crios|chromium|edg|opr|fxios/i.test(ua)) return "Safari";
+            return "Unknown Browser";
         }
-
-        // Function to refresh the access token
+    
         async function refreshAccessToken() {
             const refreshToken = localStorage.getItem('refresh_token');
             if (!refreshToken) {
-                console.error('No refresh token found');
+                console.error('No refresh token');
                 return null;
             }
-
+    
             try {
-                // Get the user's location
-                const position = await getLocation().catch(async () => await getIPLocation());
-                if (!position || !position.coords) {
-                    throw new Error("Unable to retrieve location.");
-                }
+                const position = await getLocation().catch(getIPLocation);
+                if (!position || !position.coords) throw new Error("No location data");
+    
                 const location = `${position.coords.latitude},${position.coords.longitude}`;
-
-                // Get OS and Browser info
                 const os = getOS();
                 const browser = getBrowser();
-
-                // Send the refresh request with JSON data
+    
                 const response = await fetch('https://sylvia560githubio-production-0677.up.railway.app/auth/refresh', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         refresh_token: refreshToken,
                         current_location: location,
-                        os: os,
-                        browser: browser
+                        os,
+                        browser
                     }),
                 });
-
+    
                 if (!response.ok) {
                     const errorData = await response.json();
-                    console.error('Refresh token error:', errorData);
-                    throw new Error(`HTTP error! Status: ${response.status}`);
+                    console.error('Refresh error:', errorData);
+                    throw new Error('Refresh failed');
                 }
-
+    
                 const data = await response.json();
-                console.log("Token refresh response:", data);
-
-                // Update tokens in localStorage
+                console.log("Token refreshed:", data);
+    
                 localStorage.setItem('access_token', data.access_token);
                 localStorage.setItem('refresh_token', data.refresh_token);
                 localStorage.setItem('access_token_expires', data.access_token_expires);
                 localStorage.setItem('refresh_token_expires', data.refresh_token_expires);
-                localStorage.setItem('user_info', data.user_info); // Update concatenated user info
-
-                // Schedule the next token refresh
+                localStorage.setItem('user_info', data.user_info);
+    
                 scheduleTokenRefresh();
-
+    
                 return data.access_token;
-            } catch (error) {
-                console.error('Token refresh failed:', error);
-                localStorage.clear(); // Clear tokens on failure
-                window.location.href = 'index.html'; // Redirect to login page
+            } catch (err) {
+                console.error('Refresh failed:', err);
+                localStorage.clear();
+                window.location.href = 'index.html';
                 return null;
             }
         }
-
-        // Function to schedule the next token refresh
+    
         function scheduleTokenRefresh() {
-            const accessTokenExpires = localStorage.getItem('access_token_expires');
-            if (!accessTokenExpires) return;
-
-            const currentTime = Math.floor(Date.now() / 1000); // Current time in seconds
-            const expiresIn = accessTokenExpires - currentTime; // Time remaining until expiration
-
-            if (expiresIn <= 0) {
-                // Token has already expired, refresh immediately
+            const expires = localStorage.getItem('access_token_expires');
+            if (!expires) return;
+    
+            const now = Math.floor(Date.now() / 1000);
+            const delay = (expires - now - 10) * 1000;
+            if (delay <= 0) {
                 refreshAccessToken();
             } else {
-                // Schedule refresh 10 seconds before expiration
-                const refreshTime = (expiresIn - 10) * 1000; // Convert to milliseconds
-                setTimeout(refreshAccessToken, refreshTime);
-                console.log(`Next token refresh scheduled in ${refreshTime / 1000} seconds.`);
+                setTimeout(refreshAccessToken, delay);
+                console.log(`Next refresh in ${delay / 1000}s`);
             }
         }
-
-        // Function to check token expiration and refresh if needed
+    
         async function checkTokenExpiration() {
-            const accessTokenExpires = localStorage.getItem('access_token_expires');
-            if (!accessTokenExpires) return;
-
-            const currentTime = Math.floor(Date.now() / 1000); // Current time in seconds
-            if (currentTime >= accessTokenExpires) {
-                console.log('Access token expired. Refreshing...');
-                const newAccessToken = await refreshAccessToken();
-                if (!newAccessToken) {
-                    console.error('Failed to refresh access token');
-                    return;
-                }
+            const expires = localStorage.getItem('access_token_expires');
+            const now = Math.floor(Date.now() / 1000);
+            if (!expires || now >= expires) {
+                console.log("Access token expired.");
+                await refreshAccessToken();
             }
         }
-
-        // Function to fetch data with token refresh handling
+    
         async function fetchWithTokenRefresh(url, options = {}) {
-            await checkTokenExpiration(); // Check token expiration before making the request
+            await checkTokenExpiration();
             const token = localStorage.getItem('access_token');
             if (!token) {
-                console.error('No access token found');
+                console.error("No access token");
                 window.location.href = 'index.html';
                 return;
             }
-
+    
             options.headers = {
                 ...options.headers,
-                'Authorization': `Bearer ${token}`,
+                'Authorization': `Bearer ${token}`
             };
-
-            const response = await fetch(url, options);
+    
+            let response = await fetch(url, options);
             if (response.status === 401) {
-                // Token might be expired, try refreshing
                 const newToken = await refreshAccessToken();
                 if (newToken) {
                     options.headers['Authorization'] = `Bearer ${newToken}`;
-                    return await fetch(url, options);
+                    response = await fetch(url, options);
                 } else {
-                    throw new Error('Failed to refresh token');
+                    throw new Error("Token refresh failed");
                 }
             }
+    
             return response;
         }
-
+    
         document.addEventListener('DOMContentLoaded', async () => {
-            // Check token expiration on page load
             await checkTokenExpiration();
-
-            // Schedule the next token refresh
             scheduleTokenRefresh();
-
-            // Retrieve token, user ID, and role from localStorage
+    
             const token = localStorage.getItem('access_token');
             const userId = localStorage.getItem('user_id');
             const role = localStorage.getItem('role');
-
-            console.log('Token:', token); // Debugging
-            console.log('User ID:', userId); // Debugging
-            console.log('Role:', role); // Debugging
-
-            // Redirect if not authenticated or not a patient
-            if (!token || !userId || (role !== 'Patient' && role !== 'Client')) {
-                console.error('Unauthorized access. Redirecting to login page.'); // Debugging
+    
+            if (!token || !userId || !["Patient", "Client"].includes(role)) {
+                console.error('Unauthorized: Missing or invalid token/role');
                 window.location.href = 'index.html';
                 return;
             }
-
+    
             try {
-                // Fetch patient details
-                const patientRes = await fetchWithTokenRefresh(`https://sylvia560githubio-production-0677.up.railway.app/patients?patients=${userId}`);
+                // Fetch patient record (updated URL)
+                const patientRes = await fetchWithTokenRefresh(`https://sylvia560githubio-production-0677.up.railway.app/patients/${userId}`);
                 if (!patientRes.ok) {
                     const errorResponse = await patientRes.json();
-                    console.error('Failed to fetch patient details:', errorResponse);
-                    throw new Error('Failed to fetch patient details');
+                    console.error('Patient fetch failed:', errorResponse);
+                    throw new Error('Failed to fetch patient');
                 }
                 const patientData = await patientRes.json();
-                console.log("Patient details:", patientData); // Debugging
-
-                // Update health overview
+                console.log("Patient data:", patientData);
+    
                 document.getElementById('allergies').textContent = patientData.Allergies || 'N/A';
                 document.getElementById('chronic-conditions').textContent = patientData.Chronic_Conditions || 'N/A';
-
-                // Fetch clinical services for the patient
-                const clinicalServicesRes = await fetchWithTokenRefresh(`https://sylvia560githubio-production-0677.up.railway.app/clinical-services?patients=${userId}`);
-                if (!clinicalServicesRes.ok) {
-                    const errorResponse = await clinicalServicesRes.json();
-                    console.error('Failed to fetch clinical services:', errorResponse);
-                    throw new Error('Failed to fetch clinical services');
-                }
-                const clinicalServicesData = await clinicalServicesRes.json();
-                console.log("Clinical services:", clinicalServicesData); // Debugging
-
-                // Render clinical services table
+    
                 const clinicalServicesTableBody = document.getElementById('clinical-services-body');
-                clinicalServicesTableBody.innerHTML = ''; // Clear existing rows
-
-                if (clinicalServicesData) {
-                    const row = clinicalServicesTableBody.insertRow();
-                    row.innerHTML = `
-                        <td>${clinicalServicesData.Medication_Name || 'N/A'}</td>
-                        <td>${clinicalServicesData.Treatment_Details || 'N/A'}</td>
-                        <td>${clinicalServicesData.Responsible_Doctor_ID || 'N/A'}</td>
-                    `;
+                clinicalServicesTableBody.innerHTML = '';
+    
+                if (patientData.clinical_services?.length > 0) {
+                    patientData.clinical_services.forEach(service => {
+                        const row = clinicalServicesTableBody.insertRow();
+                        row.innerHTML = `
+                            <td>${service.Medication_Name || 'N/A'}</td>
+                            <td>${service.Treatment_Details || 'N/A'}</td>
+                            <td>${service.Responsible_Doctor_ID || 'N/A'}</td>
+                        `;
+                    });
                 } else {
                     const row = clinicalServicesTableBody.insertRow();
-                    row.innerHTML = `
-                        <td colspan="3">No clinical services found.</td>
-                    `;
+                    row.innerHTML = `<td colspan="3">No clinical services found.</td>`;
                 }
-
-                // Fetch billing information for the patient
+    
                 const billingRes = await fetchWithTokenRefresh(`https://sylvia560githubio-production-0677.up.railway.app/billing?patients=${userId}`);
                 if (!billingRes.ok) {
                     const errorResponse = await billingRes.json();
-                    console.error('Failed to fetch billing information:', errorResponse);
-                    throw new Error('Failed to fetch billing information');
+                    console.error('Billing fetch failed:', errorResponse);
+                    throw new Error('Failed to fetch billing');
                 }
                 const billingData = await billingRes.json();
-                console.log("Billing information:", billingData); // Debugging
-
-                // Render billing table
+                console.log("Billing info:", billingData);
+    
                 const billingTableBody = document.getElementById('billing-body');
-                billingTableBody.innerHTML = ''; // Clear existing rows
-
+                billingTableBody.innerHTML = '';
+    
                 if (billingData) {
                     const row = billingTableBody.insertRow();
                     row.innerHTML = `
-                        <td><span class="status ${billingData.Status.toLowerCase()}">${billingData.Status || 'N/A'}</span></td>
+                        <td><span class="status ${billingData.Status?.toLowerCase() || ''}">${billingData.Status || 'N/A'}</span></td>
                         <td>${billingData.Payment_Mode || 'N/A'}</td>
                         <td>${billingData.Amount_Paid || 'N/A'}</td>
                     `;
                 } else {
                     const row = billingTableBody.insertRow();
-                    row.innerHTML = `
-                        <td colspan="3">No billing information found.</td>
-                    `;
+                    row.innerHTML = `<td colspan="3">No billing information found.</td>`;
                 }
-
+    
             } catch (error) {
-                console.error('Error:', error);
-                alert('Failed to load dashboard data. Please check the console for details.');
+                console.error('Dashboard error:', error);
+                alert('Failed to load dashboard data. See console for details.');
             }
         });
     </script>
+    
 </body>
 </html>

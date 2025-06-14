@@ -500,7 +500,8 @@ async def get_patient(
     db: Session = Depends(get_db)
 ):
     Role = current_user["role"]
-    if Role not in ["Doctor", "Nurse","Client","patient","Patient"]:  # Allow both doctors and nurses to view
+    if Role.lower() not in ["doctor", "nurse", "client", "patient"]:
+  # Allow both doctors and nurses to view
         revoke_token(current_user["token"])
         raise HTTPException(status_code=403, detail="RBAC unauthorized!")
     
