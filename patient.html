@@ -253,11 +253,21 @@
                 document.getElementById('allergies').textContent = patientData.Allergies || 'N/A';
                 document.getElementById('chronic-conditions').textContent = patientData.Chronic_Conditions || 'N/A';
     
+                const clinicalRes = await fetchWithTokenRefresh(`https://sylvia560githubio-production-0677.up.railway.app/clinical-services`);
+                if (!clinicalRes.ok) {
+                    const errorResponse = await clinicalRes.json();
+                    console.error('Clinical services fetch failed:', errorResponse);
+                    throw new Error('Failed to fetch clinical services');
+                }
+
+                const clinicalData = await clinicalRes.json();
+                console.log("Clinical services info:", clinicalData);
+
                 const clinicalServicesTableBody = document.getElementById('clinical-services-body');
                 clinicalServicesTableBody.innerHTML = '';
-    
-                try {
-                    patientData.clinical_services.forEach(service => {
+
+                if (Array.isArray(clinicalData) && clinicalData.length > 0) {
+                    clinicalData.forEach(service => {
                         const row = clinicalServicesTableBody.insertRow();
                         row.innerHTML = `
                             <td>${service.Medication_Name || 'N/A'}</td>
@@ -265,10 +275,9 @@
                             <td>${service.Responsible_Doctor_ID || 'N/A'}</td>
                         `;
                     });
-                } catch (error) {
+                } else {
                     const row = clinicalServicesTableBody.insertRow();
                     row.innerHTML = `<td colspan="3">No clinical services found.</td>`;
-                    console.error("Error rendering clinical services:", error);
                 }
 
     
