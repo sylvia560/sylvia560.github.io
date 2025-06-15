@@ -2,13 +2,14 @@ const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const nodemailer = require('nodemailer');
+const bcrypt = require('bcrypt'); // Add bcrypt for hashing
 
 const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 
 let otpStore = {};
-let attemptsStore = {}; // Store failed attempts for email
+let attemptsStore = {};
 
 const transporter = nodemailer.createTransport({
     service: 'gmail',
@@ -17,15 +18,18 @@ const transporter = nodemailer.createTransport({
         pass: 'gmzuvpsxkcwpkdwk'
     }
 });
-// this is server.js file
-app.post('/send-otp', (req, res) => {
+
+app.post('/send-otp', async (req, res) => {
     const { email } = req.body;
     console.log("OTP requested for email:", email);
 
-    const otp = Math.floor(100000 + Math.random() * 900000); // 6-digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString(); // Always use string for bcrypt
     console.log("Generated OTP:", otp);
-    otpStore[email] = otp;
-    attemptsStore[email] = 0; // Reset attempts on new OTP generation
+
+    const hashedOtp = await bcrypt.hash(otp, 10); // Hash OTP before storing
+    console.log("Hashed OTP (stored in memory):", hashedOtp); 
+    otpStore[email] = hashedOtp;
+    attemptsStore[email] = 0; // Reset attempts
 
     const mailOptions = {
         from: 'yhm5417@gmail.com',
@@ -40,17 +44,22 @@ app.post('/send-otp', (req, res) => {
     });
 });
 
-app.post('/verify-otp', (req, res) => {
+app.post('/verify-otp', async (req, res) => {
     const { email, otp } = req.body;
     if (!attemptsStore[email]) {
         attemptsStore[email] = 0;
     }
-    
-    // if (attemptsStore[email] >= 3) {return res.status(403).json({ message: "Too many failed attempts.", redirect: "doc.html" });} //
-    
-    if (otpStore[email] && otpStore[email] == otp) {
-        delete otpStore[email]; // OTP used, remove it
-        delete attemptsStore[email]; // Reset attempts on success
+
+    const storedHashedOtp = otpStore[email];
+    if (!storedHashedOtp) {
+        return res.status(400).json({ message: "OTP expired or not found" });
+    }
+
+    const isMatch = await bcrypt.compare(otp, storedHashedOtp);
+
+    if (isMatch) {
+        delete otpStore[email];
+        delete attemptsStore[email];
         return res.json({ message: "OTP verified successfully!" });
     } else {
         attemptsStore[email] += 1;
