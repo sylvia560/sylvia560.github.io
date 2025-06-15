@@ -28,6 +28,7 @@ from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 import os,base64
 import base64  # Add this import at the top of your file
 import requests
+from Identity_Management import authenticate_user  # Import the authenticate_user function from Identity_Management.py
 
 
 Session_Management_router = APIRouter(
@@ -188,11 +189,6 @@ async def login_for_access_token(
 
     user_response = await authenticate_user(db, credentials={"username": form_data.username, "password": form_data.password})
     
-    async def authenticate_user(db: Session, credentials: dict):
-        user = db.query(auth).filter(auth.Email == credentials["username"]).first()
-        if user and bcrypt.checkpw(credentials["password"].encode('utf-8'), user.Password.encode('utf-8')):
-            return {"email": user.Email}
-        raise HTTPException(status_code=401, detail="Invalid credentials")
     user = db.query(auth).filter(auth.Email == user_response["email"]).first()
     if not user:
         raise HTTPException(status_code=401, detail="Invalid credentials")
