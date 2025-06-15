@@ -89,6 +89,42 @@ class ResetPasswordRequest(BaseModel):
     email: str
     newPassword: str
 
+@IM_router.post("/auth/authenticate")
+async def authenticate_user(
+    db: db_dependency,
+    credentials: dict = Body(...)
+):
+    username = credentials.get("username")
+    password = credentials.get("password")
+    
+    if not username or not password:
+        raise HTTPException(status_code=400, detail="Username and password are required")
+    
+    user = db.query(modelsmysql.auth).filter(modelsmysql.auth.Email == username).first()
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid email")
+    if not bcrypt.checkpw(password.encode(), user.Password.encode()):
+        raise HTTPException(status_code=401, detail="Invalid password")
+    
+      # Check if user is banned
+    if user.banned_until and user.banned_until > datetime.now():
+        remaining_time = user.banned_until - datetime.now()
+        remaining_minutes = int(remaining_time.total_seconds() / 60)
+        
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Account is temporarily banned. Try again in {remaining_minutes} minutes."
+        )
+    
+    return {  # Explicit JSON response
+        "status": "success",
+        "email": user.Email,
+        "role": user.Role,  # Ensure this matches your frontend expectation
+        "user_id": user.User_ID
+    }
+
+
+
 # Password Reset Route
 @IM_router.post("/reset-password")
 def reset_password(request: ResetPasswordRequest, db: Session = Depends(get_db)): # Query the user from the database):

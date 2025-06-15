@@ -77,41 +77,6 @@ class RefreshTokenRequest(BaseModel):
     current_location: str
     os: Optional[str] = None
 
-@Session_Management_router.post("/auth/authenticate")
-async def authenticate_user(
-    db: db_dependency,
-    credentials: dict = Body(...)
-):
-    username = credentials.get("username")
-    password = credentials.get("password")
-    
-    if not username or not password:
-        raise HTTPException(status_code=400, detail="Username and password are required")
-    
-    user = db.query(auth).filter(auth.Email == username).first()
-    if not user:
-        raise HTTPException(status_code=401, detail="Invalid email")
-    if not bcrypt.checkpw(password.encode(), user.Password.encode()):
-        raise HTTPException(status_code=401, detail="Invalid password")
-    
-      # Check if user is banned
-    if user.banned_until and user.banned_until > datetime.now():
-        remaining_time = user.banned_until - datetime.now()
-        remaining_minutes = int(remaining_time.total_seconds() / 60)
-        
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail=f"Account is temporarily banned. Try again in {remaining_minutes} minutes."
-        )
-    
-    return {  # Explicit JSON response
-        "status": "success",
-        "email": user.Email,
-        "role": user.Role,  # Ensure this matches your frontend expectation
-        "user_id": user.User_ID
-    }
-
-
 # In-memory revoked tokens set (for short-lived tokens)
 REVOKED_TOKENS = set()
 
@@ -222,6 +187,12 @@ async def login_for_access_token(
     print(f"Password: {form_data.password}")
 
     user_response = await authenticate_user(db, credentials={"username": form_data.username, "password": form_data.password})
+    
+    async def authenticate_user(db: Session, credentials: dict):
+        user = db.query(auth).filter(auth.Email == credentials["username"]).first()
+        if user and bcrypt.checkpw(credentials["password"].encode('utf-8'), user.Password.encode('utf-8')):
+            return {"email": user.Email}
+        raise HTTPException(status_code=401, detail="Invalid credentials")
     user = db.query(auth).filter(auth.Email == user_response["email"]).first()
     if not user:
         raise HTTPException(status_code=401, detail="Invalid credentials")
