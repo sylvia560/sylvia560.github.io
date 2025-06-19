@@ -44,7 +44,28 @@
     </div>
     <br>
     <button id="addPatientButton" onclick="window.location.href='doc_add_patient.html'">Add Patient</button>
+    <!-- Top-right redirect button -->
+        <div style="position: absolute; top: 20px; right: 20px;">
+            <button onclick="redirectToLogin()" style="
+                background-color: #007BFF;
+                color: white;
+                border: none;
+                padding: 10px 16px;
+                border-radius: 5px;
+                font-weight: bold;
+                cursor: pointer;
+                box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+            ">
+                Logout
+            </button>
+        </div>
+
     <script>
+        function redirectToLogin() {
+            localStorage.clear(); // Optional: clear tokens/session info
+            window.location.href = 'index.html';
+        }
+
         // Constants for token expiration times (in minutes)
         const ACCESS_TOKEN_EXPIRE_MINUTES = 1; // Access token expires in 1 minute
         const REFRESH_TOKEN_EXPIRE_MINUTES = 3; // Refresh token expires in 2 minutes
