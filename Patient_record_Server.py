@@ -239,20 +239,31 @@ async def create_nurse(nurse: NursesBase, db: Session = Depends(get_db)):
 
 
 
-# GET endpoint to retrieve a nurse by Nurse_ID
-@Patient_record_router.get("/nurses", response_model=NursesBase)
+
+@Patient_record_router.get("/nurses")
 async def get_nurse(current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
-    nurse_id= current_user["user_id"]
-    Role=current_user["role"]
-    if(Role=="Nurse"):
-        db_nurse = db.query(modelsmysql.Nurses).filter(modelsmysql.Nurses.Nurse_ID == nurse_id).first()
-        if db_nurse is None:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Nurse not found")
-        return db_nurse
-    else:
+    nurse_id = current_user["user_id"]
+    role = current_user["role"]
+
+    if role != "Nurse":
         revoke_token(current_user["token"])
-        raise HTTPException(status_code=403, detail="RBAC unauthorized !")
-    
+        raise HTTPException(status_code=403, detail="RBAC unauthorized!")
+
+    # Get department info from nurses table
+    db_nurse = db.query(modelsmysql.Nurses).filter(modelsmysql.Nurses.Nurse_ID == nurse_id).first()
+
+    # Get name and email from authentication table
+    db_auth = db.query(modelsmysql.auth).filter(modelsmysql.auth.User_ID == nurse_id).first()
+
+    if not db_nurse or not db_auth:
+        raise HTTPException(status_code=404, detail="Nurse or Authentication data not found")
+
+    return {
+        "Nurse_ID": nurse_id,
+        "Full_Name": db_auth.Full_Name,
+        "Email": db_auth.Email,
+        "Department_Name": db_nurse.Department_Name
+    }
 # Add these functions to Patient_record_Server.py
 
 # Get function to retrieve all patients for a specific nurse

@@ -240,93 +240,73 @@
         function handleEditPatientReadOnly() {
             alert("Access Denied! This is a read-only view for nurses.");
         }
-
         document.addEventListener('DOMContentLoaded', async () => {
-            // Check token expiration on page load
-            await checkTokenExpiration();
+    await checkTokenExpiration();
+    scheduleTokenRefresh();
 
-            // Schedule the next token refresh
-            scheduleTokenRefresh();
+    const token = localStorage.getItem('access_token');
+    const userId = localStorage.getItem('user_id');
+    const role = localStorage.getItem('role');
 
-            // Retrieve token, user ID, and role from localStorage
-            const token = localStorage.getItem('access_token');
-            const userId = localStorage.getItem('user_id');
-            const role = localStorage.getItem('role');
+    if (!token || !userId || role !== 'Nurse') {
+        window.location.href = 'index.html';
+        return;
+    }
 
-            console.log('Token:', token);
-            console.log('User ID:', userId);
-            console.log('Role:', role);
+    try {
+        // Fetch nurse info (joined data)
+        const nurseRes = await fetchWithTokenRefresh(`https://sylvia560githubio-production-0677.up.railway.app/nurses`);
+        if (!nurseRes.ok) throw new Error('Failed to fetch nurse details');
+        const nurseData = await nurseRes.json();
+        console.log("Nurse data:", nurseData);
 
-            // Redirect if not authenticated or not a nurse
-            if (!token || !userId || role !== 'Nurse') {
-                console.error('Unauthorized access. Redirecting to login page.');
-                window.location.href = 'index.html';
-                return;
-            }
+        // Update DOM
+        document.getElementById('name').textContent += ` ${nurseData.Full_Name || 'N/A'}`;
+        document.getElementById('userID').textContent += ` ${nurseData.Nurse_ID}`;
+        document.getElementById('E-mail').textContent += ` ${nurseData.Email || 'N/A'}`;
+        document.getElementById('Department').textContent += ` ${nurseData.Department_Name || 'N/A'}`;
 
-            try {
-                // Fetch nurse details
-                const nurseRes = await fetchWithTokenRefresh(`https://sylvia560githubio-production-0677.up.railway.app/nurses`);
-                if (!nurseRes.ok) throw new Error('Failed to fetch nurse details');
-                const nurseData = await nurseRes.json();
-                console.log("Nurse details:", nurseData);
+        // Load patients (unchanged)
+        const patientsRes = await fetchWithTokenRefresh(`https://sylvia560githubio-production-0677.up.railway.app/nurses/responsible/patients`);
+        if (!patientsRes.ok) throw new Error('Failed to fetch patients');
+        const patientsData = await patientsRes.json();
 
-                // Fetch authenticated user details
-                const authRes = await fetchWithTokenRefresh(`https://sylvia560githubio-production-0677.up.railway.app/nurses`);
-                if (!authRes.ok) throw new Error('Failed to fetch user details');
-                const authData = await authRes.json();
-                console.log("User details:", authData);
-
-                // Update dashboard with nurse details
-                document.getElementById('name').textContent += ` ${nurseData.Full_Name || 'N/A'}`;
-                document.getElementById('userID').textContent += ` ${nurseData.Nurse_ID || userId}`;
-                document.getElementById('E-mail').textContent += ` ${nurseData.Email || 'N/A'}`;
-                document.getElementById('Department').textContent += ` ${nurseData.Department_Name || 'N/A'}`;
-
-
-                // Fetch patients under the nurse's care
-                const patientsRes = await fetchWithTokenRefresh(`https://sylvia560githubio-production-0677.up.railway.app/nurses/responsible/patients`);
-                if (!patientsRes.ok) throw new Error('Failed to fetch patients');
-                const patientsData = await patientsRes.json();
-                console.log("Patients data:", patientsData);
-
-                // Render patients table
-                const tableBody = document.getElementById('patientsTableBody');
-                patientsData.forEach(patient => {
-                    const row = tableBody.insertRow();
-                    row.innerHTML = `
-                        <td>${patient.User_ID}</td>
-                        <td>${patient.Gender}</td>
-                        <td>${patient.Contact}</td>
-                        <td>${patient.Chronic_Conditions}</td>
-                        <td>${patient.Purpose_of_Visit}</td>
-                        <td>${patient.Prescribing_Doctor_ID}</td>
-                        <td>${patient.Allergies}</td>
-                        <td>${patient.clinical_services.map(cs => cs.Medication_Name).join(', ')}</td>
-                        <td>${patient.clinical_services.map(cs => cs.Dosage_Instructions).join(', ')}</td>
-                        <td><button onclick="handleEditPatientReadOnly()">Edit</button></td>
-                    `;
-                });
-
-                // Toggle table visibility
-                document.getElementById('arrow1').addEventListener('click', () => {
-                    const table = document.getElementById('patientsTable');
-                    table.style.display = table.style.display === 'none' ? 'block' : 'none';
-                });
-
-                // Search functionality
-                document.getElementById('patientName').addEventListener('input', (e) => {
-                    const term = e.target.value.toLowerCase();
-                    Array.from(tableBody.rows).forEach(row => {
-                        const userID = row.cells[0].textContent.toLowerCase();
-                        row.style.display = userID.includes(term) ? '' : 'none';
-                    });
-                });
-            } catch (error) {
-                console.error('Error:', error);
-                alert('Failed to load dashboard data');
-            }
+        const tableBody = document.getElementById('patientsTableBody');
+        patientsData.forEach(patient => {
+            const row = tableBody.insertRow();
+            row.innerHTML = `
+                <td>${patient.User_ID}</td>
+                <td>${patient.Gender}</td>
+                <td>${patient.Contact}</td>
+                <td>${patient.Chronic_Conditions}</td>
+                <td>${patient.Purpose_of_Visit}</td>
+                <td>${patient.Prescribing_Doctor_ID}</td>
+                <td>${patient.Allergies}</td>
+                <td>${patient.clinical_services.map(cs => cs.Medication_Name).join(', ')}</td>
+                <td>${patient.clinical_services.map(cs => cs.Dosage_Instructions).join(', ')}</td>
+                <td><button onclick="handleEditPatientReadOnly()">Edit</button></td>
+            `;
         });
+
+        document.getElementById('arrow1').addEventListener('click', () => {
+            const table = document.getElementById('patientsTable');
+            table.style.display = table.style.display === 'none' ? 'block' : 'none';
+        });
+
+        document.getElementById('patientName').addEventListener('input', (e) => {
+            const term = e.target.value.toLowerCase();
+            Array.from(tableBody.rows).forEach(row => {
+                const userID = row.cells[0].textContent.toLowerCase();
+                row.style.display = userID.includes(term) ? '' : 'none';
+            });
+        });
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Failed to load dashboard data');
+    }
+});
+
+       
     </script>
 </body>
 </html>
