@@ -2,14 +2,14 @@ const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const nodemailer = require('nodemailer');
-const bcrypt = require('bcrypt'); // Add bcrypt for hashing
+const bcrypt = require('bcrypt');
 
 const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 
-let otpStore = {};
-let attemptsStore = {};
+let otpStore = {};      // { email: { hash, expiresAt } }
+let attemptsStore = {}; // { email: attemptCount }
 
 const transporter = nodemailer.createTransport({
     service: 'gmail',
@@ -19,16 +19,22 @@ const transporter = nodemailer.createTransport({
     }
 });
 
+// === Send OTP Endpoint ===
 app.post('/send-otp', async (req, res) => {
     const { email } = req.body;
     console.log("OTP requested for email:", email);
 
-    const otp = Math.floor(100000 + Math.random() * 900000).toString(); // Always use string for bcrypt
+    const otp = Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit OTP
     console.log("Generated OTP:", otp);
 
-    const hashedOtp = await bcrypt.hash(otp, 10); // Hash OTP before storing
+    const hashedOtp = await bcrypt.hash(otp, 10);
     console.log("Hashed OTP (stored in memory):", hashedOtp); 
-    otpStore[email] = hashedOtp;
+
+    // Store both hashed OTP and expiry time (5 minutes)
+    otpStore[email] = {
+        hash: hashedOtp,
+        expiresAt: Date.now() + 5 * 60 * 1000 // 5 minutes in ms
+    };
     attemptsStore[email] = 0; // Reset attempts
 
     const mailOptions = {
@@ -44,18 +50,27 @@ app.post('/send-otp', async (req, res) => {
     });
 });
 
+// === Verify OTP Endpoint ===
 app.post('/verify-otp', async (req, res) => {
     const { email, otp } = req.body;
+
     if (!attemptsStore[email]) {
         attemptsStore[email] = 0;
     }
 
-    const storedHashedOtp = otpStore[email];
+    const storedHashedOtp= otpStore[email];
     if (!storedHashedOtp) {
         return res.status(400).json({ message: "OTP expired or not found" });
     }
 
-    const isMatch = await bcrypt.compare(otp, storedHashedOtp);
+    // Check OTP expiration
+    if (Date.now() > storedHashedOtp.expiresAt) {
+        delete otpStore[email];
+        delete attemptsStore[email];
+        return res.status(400).json({ message: "OTP has expired. Please request a new one." });
+    }
+
+    const isMatch = await bcrypt.compare(otp, storedHashedOtp.hash);
 
     if (isMatch) {
         delete otpStore[email];
@@ -64,6 +79,8 @@ app.post('/verify-otp', async (req, res) => {
     } else {
         attemptsStore[email] += 1;
         if (attemptsStore[email] >= 3) {
+            delete otpStore[email];
+            delete attemptsStore[email];
             return res.status(403).json({ message: "Failed to verify OTP!" });
         }
         return res.status(400).json({ message: "Invalid OTP. Attempt " + attemptsStore[email] + " of 3" });
