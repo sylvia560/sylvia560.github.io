@@ -3,6 +3,7 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 const nodemailer = require('nodemailer');
 const bcrypt = require('bcrypt');
+const crypto = require('crypto'); // ✅ Added for secure random OTP
 
 const app = express();
 app.use(cors());
@@ -24,18 +25,17 @@ app.post('/send-otp', async (req, res) => {
     const { email } = req.body;
     console.log("OTP requested for email:", email);
 
-    const otp = Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit OTP
+    const otp = crypto.randomInt(100000, 1000000).toString(); // ✅ Secure OTP
     console.log("Generated OTP:", otp);
 
     const hashedOtp = await bcrypt.hash(otp, 10);
     console.log("Hashed OTP (stored in memory):", hashedOtp); 
 
-    // Store both hashed OTP and expiry time (5 minutes)
     otpStore[email] = {
         hash: hashedOtp,
-        expiresAt: Date.now() + 5 * 60 * 1000 // 5 minutes in ms
+        expiresAt: Date.now() + 5 * 60 * 1000
     };
-    attemptsStore[email] = 0; // Reset attempts
+    attemptsStore[email] = 0;
 
     const mailOptions = {
         from: 'yhm5417@gmail.com',
@@ -58,12 +58,11 @@ app.post('/verify-otp', async (req, res) => {
         attemptsStore[email] = 0;
     }
 
-    const storedHashedOtp= otpStore[email];
+    const storedHashedOtp = otpStore[email];
     if (!storedHashedOtp) {
         return res.status(400).json({ message: "OTP expired or not found" });
     }
 
-    // Check OTP expiration
     if (Date.now() > storedHashedOtp.expiresAt) {
         delete otpStore[email];
         delete attemptsStore[email];
